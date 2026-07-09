@@ -1,11 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-
-const SCENARIO_LABELS = {
-  popular_science: "科普传播",
-  classroom_teaching: "课堂教学",
-  research_presentation: "科研展示",
-  long_term_learning: "长期学习陪伴",
-};
+import { useState, useEffect, useRef, useMemo } from "react";
 
 function App() {
   const [backendStatus, setBackendStatus] = useState(null);
@@ -85,7 +78,10 @@ function App() {
     }
   };
 
-  const currentLabel = SCENARIO_LABELS[selectedScenario] || selectedScenario;
+  const currentLabel = useMemo(
+    () => scenarios.find((s) => s.id === selectedScenario)?.name || selectedScenario,
+    [scenarios, selectedScenario]
+  );
 
   return (
     <div className="app">
