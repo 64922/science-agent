@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,6 +13,7 @@ load_dotenv(_project_root / ".env")
 
 from llm_client import LLMClient, ConfigError, APIError  # noqa: E402
 from scenario_router import ScenarioRouter  # noqa: E402
+from knowledge_store import KnowledgeStore  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -48,6 +49,10 @@ except ConfigError as exc:
 scenario_router = ScenarioRouter()
 logger.info("ScenarioRouter 初始化成功，已加载 %d 个场景", len(scenario_router.list_scenarios()))
 
+# 初始化 KnowledgeStore
+knowledge_store = KnowledgeStore()
+logger.info("KnowledgeStore 初始化成功，存储目录: %s", knowledge_store.storage_dir)
+
 
 @app.get("/api/health")
 async def health():
@@ -75,6 +80,45 @@ async def llm_status():
 async def list_scenarios():
     """返回所有可用场景配置。"""
     return {"scenarios": scenario_router.list_scenarios()}
+
+
+@app.post("/api/knowledge/upload")
+async def upload_knowledge(file: UploadFile = File(...)):
+    """上传知识资料（.txt / .md），完成清洗和切分后保存。"""
+    filename = file.filename or "untitled"
+    ext = Path(filename).suffix.lower()
+    if ext not in (".txt", ".md", ".markdown"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持的文件类型「{ext}」，仅支持 .txt 和 .md",
+        )
+
+    try:
+        raw = await file.read()
+        content = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="文件编码不支持，请使用 UTF-8")
+
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="文件内容为空")
+
+    doc = knowledge_store.upload(filename, content)
+    return {"status": "ok", "document": doc}
+
+
+@app.get("/api/knowledge/documents")
+async def list_knowledge_documents():
+    """返回已上传的知识资料列表。"""
+    return {"documents": knowledge_store.list_documents()}
+
+
+@app.get("/api/knowledge/documents/{doc_id}")
+async def get_knowledge_document(doc_id: str):
+    """获取单个文档的详细信息和所有切片。"""
+    doc = knowledge_store.get_document(doc_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+    return {"document": doc}
 
 
 @app.post("/api/chat")

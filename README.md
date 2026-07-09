@@ -85,6 +85,9 @@ npm run dev
 | GET | `/api/llm/status` | LLMClient 状态与调用日志 |
 | GET | `/api/scenarios` | 场景列表 |
 | POST | `/api/chat` | 对话接口 |
+| POST | `/api/knowledge/upload` | 上传知识资料（.txt / .md） |
+| GET | `/api/knowledge/documents` | 已上传资料列表 |
+| GET | `/api/knowledge/documents/{id}` | 文档详情与切片 |
 
 ## 演示数据
 

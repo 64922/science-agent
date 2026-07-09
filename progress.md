@@ -131,5 +131,33 @@
 | What have I learned? | ScenarioRouter 模式正确——4 套场景提示词产生明显不同的回答结构 |
 | What have I done? | Phase 1 全部完成（Issues 01-04）：骨架→LLM→对话→场景路由 |
 
+### Issue 05: 知识资料上传与文本切分
+- **Status:** complete
+- **Started:** 2026-07-09
+- Actions taken:
+  - 创建 `backend/knowledge_store.py`：KnowledgeStore 类，文本清洗 + 段落切分 + JSON 文件持久化
+  - 后端新增 3 个端点：`POST /api/knowledge/upload`、`GET /api/knowledge/documents`、`GET /api/knowledge/documents/{id}`
+  - 创建 `frontend/src/KnowledgePage.jsx`：知识库管理页（上传按钮 + 文档列表表格）
+  - App.jsx 新增"对话 / 知识库"主 Tab 导航
+  - requirements.txt 新增 python-multipart 依赖
+  - Code review 修复：移除未使用的 hashlib import、移除 source_type 参数、移除 search_chunks（属 Issue 07）
+- Files created/modified:
+  - backend/knowledge_store.py (created — 186 lines)
+  - backend/main.py (updated — 3 new endpoints)
+  - backend/requirements.txt (updated — python-multipart)
+  - frontend/src/KnowledgePage.jsx (created)
+  - frontend/src/KnowledgePage.css (created)
+  - frontend/src/App.jsx (updated — tab navigation)
+  - frontend/src/App.css (updated — tab styles)
+  - README.md (updated — API table)
+  - findings.md (updated)
+- Verification:
+  - POST upload → 200 + document metadata with chunk_count
+  - GET documents → 200 + list
+  - GET documents/{id} → 200 + chunks with chunk_index + content
+  - 400 on invalid extension / empty content
+  - 404 on missing document
+  - `vite build` → 29 modules, 458ms
+
 ---
 *每个阶段完成后或遇到错误时更新*

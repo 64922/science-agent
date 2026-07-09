@@ -31,7 +31,7 @@ Phase 2
 - **Status:** complete
 
 ### Phase 2: 知识库与事实校验 (Issues 05-09) ← 当前阶段
-- [ ] **Issue 05**: 知识资料上传与文本切分
+- [x] **Issue 05**: 知识资料上传与文本切分
   - 知识库管理页
   - 支持 .txt / .md 上传
   - 文本清洗、切分、保存
@@ -50,7 +50,7 @@ Phase 2
   - 检测绝对化表达、数字、医学建议、因果外推
   - 无证据高风险句标记和修复
   - 前端显示风险检测结果
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 3: 用户画像系统 (Issues 10-13)
 - [ ] **Issue 10**: 用户画像 Schema 与画像管理页

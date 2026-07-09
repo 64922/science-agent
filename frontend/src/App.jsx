@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import KnowledgePage from "./KnowledgePage";
 
 function App() {
+  const [activeTab, setActiveTab] = useState("chat");
   const [backendStatus, setBackendStatus] = useState(null);
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState("popular_science");
@@ -99,63 +101,84 @@ function App() {
         </div>
       </header>
 
-      <nav className="scenario-bar">
-        {scenarios.map((s) => (
-          <button
-            key={s.id}
-            className={`scenario-tab ${s.id === selectedScenario ? "active" : ""}`}
-            onClick={() => setSelectedScenario(s.id)}
-            disabled={loading}
-          >
-            {s.name}
-          </button>
-        ))}
+      <nav className="main-tabs">
+        <button
+          className={`main-tab ${activeTab === "chat" ? "active" : ""}`}
+          onClick={() => setActiveTab("chat")}
+        >
+          对话
+        </button>
+        <button
+          className={`main-tab ${activeTab === "knowledge" ? "active" : ""}`}
+          onClick={() => setActiveTab("knowledge")}
+        >
+          知识库
+        </button>
       </nav>
 
-      <main className="chat-area">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.role}`}>
-            <div className="message-role">
-              {msg.role === "user"
-                ? "你"
-                : msg.scenarioName
-                  ? `知己 · ${msg.scenarioName}`
-                  : "知己"}
-            </div>
-            <div className="message-content">{msg.content}</div>
-          </div>
-        ))}
+      {activeTab === "chat" && (
+        <>
+          <nav className="scenario-bar">
+            {scenarios.map((s) => (
+              <button
+                key={s.id}
+                className={`scenario-tab ${s.id === selectedScenario ? "active" : ""}`}
+                onClick={() => setSelectedScenario(s.id)}
+                disabled={loading}
+              >
+                {s.name}
+              </button>
+            ))}
+          </nav>
 
-        {loading && (
-          <div className="message assistant">
-            <div className="message-role">知己 · {currentLabel}</div>
-            <div className="message-content loading">思考中...</div>
-          </div>
-        )}
+          <main className="chat-area">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`message ${msg.role}`}>
+                <div className="message-role">
+                  {msg.role === "user"
+                    ? "你"
+                    : msg.scenarioName
+                      ? `知己 · ${msg.scenarioName}`
+                      : "知己"}
+                </div>
+                <div className="message-content">{msg.content}</div>
+              </div>
+            ))}
 
-        {error && (
-          <div className="error-banner">
-            出错了：{error}
-            <button onClick={() => setError(null)}>关闭</button>
-          </div>
-        )}
+            {loading && (
+              <div className="message assistant">
+                <div className="message-role">知己 · {currentLabel}</div>
+                <div className="message-content loading">思考中...</div>
+              </div>
+            )}
 
-        <div ref={messagesEndRef} />
-      </main>
+            {error && (
+              <div className="error-banner">
+                出错了：{error}
+                <button onClick={() => setError(null)}>关闭</button>
+              </div>
+            )}
 
-      <footer className="chat-input-area">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`在「${currentLabel}」场景下提问，按 Enter 发送...`}
-          disabled={loading}
-        />
-        <button onClick={handleSend} disabled={loading || !input.trim()}>
-          发送
-        </button>
-      </footer>
+            <div ref={messagesEndRef} />
+          </main>
+
+          <footer className="chat-input-area">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`在「${currentLabel}」场景下提问，按 Enter 发送...`}
+              disabled={loading}
+            />
+            <button onClick={handleSend} disabled={loading || !input.trim()}>
+              发送
+            </button>
+          </footer>
+        </>
+      )}
+
+      {activeTab === "knowledge" && <KnowledgePage />}
     </div>
   );
 }
