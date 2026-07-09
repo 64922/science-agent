@@ -15,11 +15,11 @@ Phase 1
   - README 说明启动步骤
   - 前端首页显示"知己科教 Agent"
   - 后端 /api/health 返回服务状态
-- [ ] **Issue 02**: 封装 Qwen / 百炼模型调用客户端
+- [x] **Issue 02**: 封装 Qwen / 百炼模型调用客户端
   - 统一 LLMClient，支持普通对话、结构化输出、JSON 重试
   - 调用日志记录（模型名、调用类型、耗时、成功状态）
   - 缺少 API Key 时返回清晰错误
-- [ ] **Issue 03**: 实现基础对话工作台
+- [x] **Issue 03**: 实现基础对话工作台
   - 前端对话输入框、发送按钮、消息列表
   - /api/chat 接收 user_id、message、scenario_id
   - 加载中/失败状态提示

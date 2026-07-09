@@ -1,7 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function App() {
   const [backendStatus, setBackendStatus] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     fetch("/api/health")
@@ -10,50 +15,111 @@ function App() {
       .catch(() => setBackendStatus({ status: "disconnected" }));
   }, []);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const userMsg = { id: Date.now(), role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: "demo_user_a",
+          message: text,
+          scenario_id: "popular_science",
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `请求失败 (${res.status})`);
+      }
+
+      const data = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), role: "assistant", content: data.reply },
+      ]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <div className="app">
-      <header className="hero">
+      <header className="chat-header">
         <h1>知己科教 Agent</h1>
-        <p className="subtitle">
-          一个能记住你、锁定事实、像真人老师一样讲科学的智能体
-        </p>
+        <div className="status-bar">
+          <span className="status-dot" data-status={backendStatus?.status} />
+          <span>
+            {backendStatus
+              ? backendStatus.status === "ok"
+                ? "服务运行中"
+                : "未连接"
+              : "检测中..."}
+          </span>
+        </div>
       </header>
 
-      <section className="status-bar">
-        <span className="status-dot" data-status={backendStatus?.status} />
-        <span>
-          后端服务：
-          {backendStatus
-            ? backendStatus.status === "ok"
-              ? "运行中"
-              : "未连接"
-            : "检测中..."}
-        </span>
-      </section>
+      <main className="chat-area">
+        {messages.map((msg) => (
+          <div key={msg.id} className={`message ${msg.role}`}>
+            <div className="message-role">
+              {msg.role === "user" ? "你" : "知己"}
+            </div>
+            <div className="message-content">{msg.content}</div>
+          </div>
+        ))}
 
-      <main className="demo-section">
-        <h2>演示主题</h2>
-        <div className="demo-card">
-          <h3>免疫系统如何识别病毒</h3>
-          <p>从抗原呈递到免疫记忆，一步步理解身体的防御机制。</p>
-        </div>
+        {loading && (
+          <div className="message assistant">
+            <div className="message-role">知己</div>
+            <div className="message-content loading">思考中...</div>
+          </div>
+        )}
 
-        <h2>演示用户</h2>
-        <div className="user-cards">
-          <div className="user-card">
-            <h4>用户 A：高一学生</h4>
-            <p>基础较弱，喜欢航天类比，一步步讲</p>
+        {error && (
+          <div className="error-banner">
+            出错了：{error}
+            <button onClick={() => setError(null)}>关闭</button>
           </div>
-          <div className="user-card">
-            <h4>用户 B：大学低年级学生</h4>
-            <p>知道术语但不稳，喜欢机制图和因果链</p>
-          </div>
-          <div className="user-card">
-            <h4>用户 C：科研新手</h4>
-            <p>关注证据来源，偏好严谨克制表达</p>
-          </div>
-        </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </main>
+
+      <footer className="chat-input-area">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="输入你的问题，按 Enter 发送..."
+          disabled={loading}
+        />
+        <button onClick={handleSend} disabled={loading || !input.trim()}>
+          发送
+        </button>
+      </footer>
     </div>
   );
 }

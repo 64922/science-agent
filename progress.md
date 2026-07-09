@@ -29,7 +29,7 @@
 
 ### Phase 1: 基础骨架与模型接入
 - **Status:** in_progress
-- **Issues:** ~~01~~, 02, 03, 04
+- **Issues:** ~~01~~, ~~02~~, ~~03~~, 04
 - Actions taken:
   - **Issue 01 完成**: 创建完整项目骨架
 - Files created/modified:
@@ -48,6 +48,47 @@
   - `curl /api/health` → `{"status":"ok","service":"知己科教 Agent","version":"0.1.0"}`
   - `vite build` → 构建成功 (27 modules, 423ms)
 
+### Issue 02: 封装 Qwen / 百炼模型调用客户端
+- **Status:** complete
+  - llm_client.py: LLMClient 统一封装（chat, chat_structured）
+  - call_log.py: CallLog 数据模型
+  - main.py: 集成 LLMClient + /api/llm/status 端点
+  - 支持 JSON 解析失败自动重试（最多 3 次）
+  - 缺少 API Key 时 raise ConfigError，不导致服务崩溃
+- Files created/modified:
+  - backend/llm_client.py (created)
+  - backend/call_log.py (created)
+  - backend/main.py (updated — LLMClient 集成)
+  - backend/requirements.txt (updated — openai, python-dotenv)
+  - README.md (updated — 百炼 API Key 配置说明 + 截图提醒)
+- Verification:
+  - `curl /api/health` → `{"llm_ready":true}`
+  - `curl /api/llm/status` → 返回模型名、调用次数、最近日志
+  - chat() 调用成功，日志包含 model_name, call_type, elapsed, success, tokens
+  - chat_structured() JSON 输出成功，失败重试机制正常
+  - 未配置 API Key 时: ConfigError + 清晰错误信息
+  - `vite build` → 构建成功 (27 modules, 373ms)
+
+### Issue 03: 实现基础对话工作台
+- **Status:** complete
+  - main.py: 新增 `/api/chat` POST 端点（ChatRequest 模型，`user_id`/`message`/`scenario_id`）
+  - main.py: `_build_system_prompt()` 通用科教提示词（不含画像，画像归 Phase 3）
+  - App.jsx: 对话工作台（消息列表 + 输入框 + 发送按钮 + 加载/错误状态）
+  - App.css: 聊天界面样式
+  - Enter 发送，自动滚到底部
+  - Code review 后裁剪：移除用户/场景选择器（属 Issue 04/10-13）、空状态建议问题
+- Files created/modified:
+  - backend/main.py (updated — ChatRequest + `/api/chat` + `_build_system_prompt`)
+  - frontend/src/App.jsx (rewritten — 对话工作台)
+  - frontend/src/App.css (rewritten — 聊天界面样式)
+  - README.md (updated — API 表新增 `/api/chat`)
+  - findings.md (updated — Issue 03 完成)
+- Verification:
+  - `POST /api/chat` → 请求解析、LLMClient 调用、错误处理全链路打通
+  - `vite build` → 构建成功 (27 modules, 395ms)
+  - `/api/health` → `{"llm_ready":true}`
+  - 503 (LLM 未就绪) / 502 (API 错误) 错误响应正确
+
 ## Test Results
 | Test | Input | Expected | Actual | Status |
 |------|-------|----------|--------|--------|
@@ -61,7 +102,7 @@
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 1 — 开始 Issue 01（项目骨架初始化） |
+| Where am I? | Phase 1 — Issue 03 完成，准备 Issue 04（场景路由） |
 | Where am I going? | 按 7 批顺序推进，先跑通后端 API + 前端对话 + 场景路由 |
 | What's the goal? | 构建知己科教 Agent MVP，完整跑通画像-事实-人味化-多模态-评估闭环 |
 | What have I learned? | docs/product-plan.md 已定义 24 个 Issue，开发分 7 批顺序执行 |

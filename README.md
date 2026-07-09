@@ -31,14 +31,31 @@ science-agent/
 
 ## 快速启动
 
-### 1. 配置环境变量
+### 1. 获取百炼 API Key
+
+本项目使用阿里云百炼平台提供的千问（Qwen）模型。你需要：
+
+1. 登录 [阿里云百炼控制台](https://bailian.console.aliyun.com/)
+2. 开通模型服务（推荐 qwen-plus 或 qwen-turbo）
+3. 在控制台右上角「API-KEY 管理」创建 API Key
+4. **保存百炼控制台截图**到 `screenshots/` 目录（包含模型列表和 API Key 管理页，用于赛事交付材料）
+
+### 2. 配置环境变量
 
 ```bash
 cp .env.example .env
-# 编辑 .env，填入你的百炼 API Key
+# 编辑 .env，将 your_api_key_here 替换为你的百炼 API Key
 ```
 
-### 2. 启动后端
+`.env` 文件内容：
+
+```ini
+DASHSCOPE_API_KEY=你的百炼APIKey
+QWEN_MODEL=qwen-plus
+QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+```
+
+### 3. 启动后端
 
 ```bash
 cd backend
@@ -47,8 +64,10 @@ uvicorn main:app --reload --port 8000
 ```
 
 后端启动后访问 http://localhost:8000/api/health 确认服务状态。
+- `llm_ready: true` 表示 LLMClient 已成功初始化
+- `llm_ready: false` 表示 API Key 未配置，需检查 `.env` 文件
 
-### 3. 启动前端
+### 4. 启动前端
 
 ```bash
 cd frontend
@@ -63,6 +82,8 @@ npm run dev
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/api/health` | 服务健康检查 |
+| GET | `/api/llm/status` | LLMClient 状态与调用日志 |
+| POST | `/api/chat` | 对话接口 |
 
 ## 演示数据
 
