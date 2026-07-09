@@ -4,7 +4,7 @@
 构建一个可演示的科教智能体 MVP，跑通"画像闭环 + 事实校验 + 人味化表达 + 多模态展示 + 评估看板"完整链路，主演示主题为"免疫系统如何识别病毒"。
 
 ## Current Phase
-Phase 1
+Phase 2
 
 ## Phases
 
@@ -23,14 +23,14 @@ Phase 1
   - 前端对话输入框、发送按钮、消息列表
   - /api/chat 接收 user_id、message、scenario_id
   - 加载中/失败状态提示
-- [ ] **Issue 04**: 场景选择与输出类型路由
+- [x] **Issue 04**: 场景选择与输出类型路由
   - 前端支持 4 个场景选择（科普传播、课堂教学、科研展示、长期学习陪伴）
   - ScenarioRouter 后端实现
   - 同一问题不同场景生成不同结构回答
   - 单元测试覆盖场景路由
-- **Status:** in_progress
+- **Status:** complete
 
-### Phase 2: 知识库与事实校验 (Issues 05-09)
+### Phase 2: 知识库与事实校验 (Issues 05-09) ← 当前阶段
 - [ ] **Issue 05**: 知识资料上传与文本切分
   - 知识库管理页
   - 支持 .txt / .md 上传

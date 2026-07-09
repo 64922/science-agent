@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 
+const SCENARIO_LABELS = {
+  popular_science: "科普传播",
+  classroom_teaching: "课堂教学",
+  research_presentation: "科研展示",
+  long_term_learning: "长期学习陪伴",
+};
+
 function App() {
   const [backendStatus, setBackendStatus] = useState(null);
+  const [scenarios, setScenarios] = useState([]);
+  const [selectedScenario, setSelectedScenario] = useState("popular_science");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,6 +22,13 @@ function App() {
       .then((res) => res.json())
       .then((data) => setBackendStatus(data))
       .catch(() => setBackendStatus({ status: "disconnected" }));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/scenarios")
+      .then((res) => res.json())
+      .then((data) => setScenarios(data.scenarios || []))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -36,7 +52,7 @@ function App() {
         body: JSON.stringify({
           user_id: "demo_user_a",
           message: text,
-          scenario_id: "popular_science",
+          scenario_id: selectedScenario,
         }),
       });
 
@@ -48,7 +64,12 @@ function App() {
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), role: "assistant", content: data.reply },
+        {
+          id: Date.now(),
+          role: "assistant",
+          content: data.reply,
+          scenarioName: data.scenario_name,
+        },
       ]);
     } catch (err) {
       setError(err.message);
@@ -63,6 +84,8 @@ function App() {
       handleSend();
     }
   };
+
+  const currentLabel = SCENARIO_LABELS[selectedScenario] || selectedScenario;
 
   return (
     <div className="app">
@@ -80,11 +103,28 @@ function App() {
         </div>
       </header>
 
+      <nav className="scenario-bar">
+        {scenarios.map((s) => (
+          <button
+            key={s.id}
+            className={`scenario-tab ${s.id === selectedScenario ? "active" : ""}`}
+            onClick={() => setSelectedScenario(s.id)}
+            disabled={loading}
+          >
+            {s.name}
+          </button>
+        ))}
+      </nav>
+
       <main className="chat-area">
         {messages.map((msg) => (
           <div key={msg.id} className={`message ${msg.role}`}>
             <div className="message-role">
-              {msg.role === "user" ? "你" : "知己"}
+              {msg.role === "user"
+                ? "你"
+                : msg.scenarioName
+                  ? `知己 · ${msg.scenarioName}`
+                  : "知己"}
             </div>
             <div className="message-content">{msg.content}</div>
           </div>
@@ -92,7 +132,7 @@ function App() {
 
         {loading && (
           <div className="message assistant">
-            <div className="message-role">知己</div>
+            <div className="message-role">知己 · {currentLabel}</div>
             <div className="message-content loading">思考中...</div>
           </div>
         )}
@@ -113,7 +153,7 @@ function App() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="输入你的问题，按 Enter 发送..."
+          placeholder={`在「${currentLabel}」场景下提问，按 Enter 发送...`}
           disabled={loading}
         />
         <button onClick={handleSend} disabled={loading || !input.trim()}>

@@ -83,6 +83,7 @@ npm run dev
 |------|------|------|
 | GET | `/api/health` | 服务健康检查 |
 | GET | `/api/llm/status` | LLMClient 状态与调用日志 |
+| GET | `/api/scenarios` | 场景列表 |
 | POST | `/api/chat` | 对话接口 |
 
 ## 演示数据

@@ -28,8 +28,8 @@
   - progress.md (this update)
 
 ### Phase 1: 基础骨架与模型接入
-- **Status:** in_progress
-- **Issues:** ~~01~~, ~~02~~, ~~03~~, 04
+- **Status:** complete
+- **Issues:** ~~01~~, ~~02~~, ~~03~~, ~~04~~
 - Actions taken:
   - **Issue 01 完成**: 创建完整项目骨架
 - Files created/modified:
@@ -89,6 +89,29 @@
   - `/api/health` → `{"llm_ready":true}`
   - 503 (LLM 未就绪) / 502 (API 错误) 错误响应正确
 
+### Issue 04: 场景选择与输出类型路由
+- **Status:** complete
+- Actions taken:
+  - scenario_router.py: ScenarioRouter 加载 demo-data.json 场景配置
+  - 4 套场景专属系统提示词（科普/课堂/科研/陪伴），同一问题不同场景生成不同结构回答
+  - main.py: 集成 ScenarioRouter，`_build_system_prompt()` 替换为 router 版本
+  - main.py: 新增 `GET /api/scenarios` 返回可用场景列表
+  - main.py: `/api/chat` 响应新增 `scenario_name` 字段 + 无效 scenario_id 返回 400
+  - App.jsx: 场景选择器（4 按钮标签栏）+ 消息角色显示当前场景名称
+  - App.css: 场景栏样式
+  - test_scenario_router.py: 10 个单元测试（场景加载/配置获取/提示词生成/列表格式）
+- Files created/modified:
+  - backend/scenario_router.py (created)
+  - backend/test_scenario_router.py (created)
+  - backend/main.py (updated — ScenarioRouter 集成 + `/api/scenarios` + chat 响应扩展)
+  - backend/requirements.txt (updated — pytest)
+  - frontend/src/App.jsx (updated — 场景选择器 + 场景名称显示)
+  - frontend/src/App.css (updated — 场景栏样式)
+- Verification:
+  - `pytest test_scenario_router.py -v` → 10 passed
+  - `vite build` → 构建成功 (27 modules, 388ms)
+  - 4 场景系统提示词均有区分度（科普→生动类比、课堂→提纲+思考题、科研→摘要+证据边界、陪伴→小节+学习建议）
+
 ## Test Results
 | Test | Input | Expected | Actual | Status |
 |------|-------|----------|--------|--------|
@@ -102,11 +125,11 @@
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 1 — Issue 03 完成，准备 Issue 04（场景路由） |
-| Where am I going? | 按 7 批顺序推进，先跑通后端 API + 前端对话 + 场景路由 |
+| Where am I? | Phase 1 完成，准备 Phase 2（知识库与事实校验，Issues 05-09） |
+| Where am I going? | Phase 2: 知识上传→Skill 生成→检索→事实锁定→幻觉抑制 |
 | What's the goal? | 构建知己科教 Agent MVP，完整跑通画像-事实-人味化-多模态-评估闭环 |
-| What have I learned? | docs/product-plan.md 已定义 24 个 Issue，开发分 7 批顺序执行 |
-| What have I done? | 已将 task_plan.md 按 24 个 Issue 填实，规划文件就绪 |
+| What have I learned? | ScenarioRouter 模式正确——4 套场景提示词产生明显不同的回答结构 |
+| What have I done? | Phase 1 全部完成（Issues 01-04）：骨架→LLM→对话→场景路由 |
 
 ---
 *每个阶段完成后或遇到错误时更新*

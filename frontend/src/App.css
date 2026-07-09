@@ -59,6 +59,44 @@ body {
   background: #ef4444;
 }
 
+/* Scenario Bar */
+.scenario-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+}
+
+.scenario-tab {
+  padding: 7px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.scenario-tab:hover:not(:disabled) {
+  border-color: #0f3460;
+  color: #0f3460;
+}
+
+.scenario-tab.active {
+  background: #0f3460;
+  color: #fff;
+  border-color: #0f3460;
+}
+
+.scenario-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Chat Area */
 .chat-area {
   flex: 1;

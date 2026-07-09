@@ -12,6 +12,8 @@
 - Issue 01 完成：项目骨架、FastAPI + React、演示数据就绪
 - Issue 02 完成：LLMClient 统一封装，通过 OpenAI SDK 调用百炼 Qwen
 - Issue 03 完成：基础对话工作台（/api/chat + 前端聊天界面），系统提示词不含画像注入，画像和场景选择器归后续 Issue
+- Issue 04 完成：ScenarioRouter 加载 demo-data.json 4 个场景配置，每个场景有独立系统提示词（科普→生动类比、课堂→提纲+思考题、科研→摘要+证据边界、陪伴→小节+学习建议），前端场景选择器标签栏 + 消息显示场景名称，10 个单元测试全部通过
+- Phase 1（Issues 01-04）全部完成，项目进入 Phase 2：知识库与事实校验
 - docs/product-plan.md 已包含完整的 14 模块产品设计和 24 个 Issue 定义
 - 开发分 7 批顺序推进：基础骨架 → 知识库 → 画像 → 人味化 → 学习/多模态 → 评估 → 交付
 

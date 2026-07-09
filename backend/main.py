@@ -12,6 +12,7 @@ _project_root = Path(__file__).resolve().parent.parent
 load_dotenv(_project_root / ".env")
 
 from llm_client import LLMClient, ConfigError, APIError  # noqa: E402
+from scenario_router import ScenarioRouter  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -21,16 +22,6 @@ class ChatRequest(BaseModel):
     user_id: str
     message: str
     scenario_id: str = "popular_science"
-
-
-def _build_system_prompt(scenario_id: str, user_id: str) -> str:
-    """构建基础系统提示词（画像和知识库在后续 Issue 中接入）。"""
-    return (
-        '你是"知己"，一个专业的科教智能体。'
-        '你的任务是围绕"免疫系统如何识别病毒"这一主题，'
-        "用科学、准确、易懂的方式回答用户的问题。"
-        "请用流畅自然的中文回答，根据问题的难度调整讲解深度，像一位耐心的老师。"
-    )
 
 
 app = FastAPI(title="知己科教 Agent", version="0.1.0")
@@ -52,6 +43,10 @@ try:
 except ConfigError as exc:
     llm_init_error = str(exc)
     logger.warning("LLMClient 未就绪: %s", llm_init_error)
+
+# 初始化 ScenarioRouter
+scenario_router = ScenarioRouter()
+logger.info("ScenarioRouter 初始化成功，已加载 %d 个场景", len(scenario_router.list_scenarios()))
 
 
 @app.get("/api/health")
@@ -76,6 +71,12 @@ async def llm_status():
     return llm_client.get_status()
 
 
+@app.get("/api/scenarios")
+async def list_scenarios():
+    """返回所有可用场景配置。"""
+    return {"scenarios": scenario_router.list_scenarios()}
+
+
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     """接收用户消息，调用 LLM 返回科学讲解。"""
@@ -85,7 +86,14 @@ async def chat(req: ChatRequest):
             detail=llm_init_error or "LLM 服务未就绪，请检查 API Key 配置",
         )
     try:
-        system_prompt = _build_system_prompt(req.scenario_id, req.user_id)
+        scenario = scenario_router.get_scenario_config(req.scenario_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    try:
+        system_prompt = scenario_router.build_system_prompt(
+            req.scenario_id, req.user_id
+        )
         reply = llm_client.chat(system_prompt, req.message)
     except APIError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
@@ -94,4 +102,5 @@ async def chat(req: ChatRequest):
         "reply": reply,
         "user_id": req.user_id,
         "scenario_id": req.scenario_id,
+        "scenario_name": scenario["name"],
     }
