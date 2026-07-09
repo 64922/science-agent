@@ -339,3 +339,96 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Fact Lock Panel */
+.fact-lock-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fl-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.fl-badge.fl-confirmed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.fl-badge.fl-uncertain {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.fl-badge.fl-forbidden {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.fact-lock-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fl-item {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #d1d5db;
+}
+
+.fl-item-confirmed {
+  background: #f0fdf4;
+  border-left-color: #22c55e;
+}
+
+.fl-item-uncertain {
+  background: #fefce8;
+  border-left-color: #eab308;
+}
+
+.fl-item-forbidden {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+}
+
+.fl-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.fl-item-confirmed .fl-tag {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+.fl-item-uncertain .fl-tag {
+  background: #fef08a;
+  color: #854d0e;
+}
+
+.fl-item-forbidden .fl-tag {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.fl-reason {
+  display: block;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}

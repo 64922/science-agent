@@ -1,6 +1,69 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import KnowledgePage from "./KnowledgePage";
 
+function FactLockPanel({ factLock }) {
+  if (!factLock) {
+    return (
+      <>
+        <h3>事实锁定结果</h3>
+        <p className="citation-empty">知识库无匹配资料，未执行事实锁定</p>
+      </>
+    );
+  }
+
+  const facts = factLock.facts || {};
+  const confirmed = facts.confirmed || [];
+  const uncertain = facts.uncertain || [];
+  const forbidden = facts.forbidden || [];
+
+  const isEmpty = confirmed.length === 0 && uncertain.length === 0 && forbidden.length === 0;
+
+  return (
+    <>
+      <h3>事实锁定结果</h3>
+      {isEmpty ? (
+        <p className="citation-empty">本轮未抽取出结构化事实</p>
+      ) : (
+        <>
+          <div className="fact-lock-summary">
+            {confirmed.length > 0 && (
+              <span className="fl-badge fl-confirmed">已确认 {confirmed.length}</span>
+            )}
+            {uncertain.length > 0 && (
+              <span className="fl-badge fl-uncertain">不确定 {uncertain.length}</span>
+            )}
+            {forbidden.length > 0 && (
+              <span className="fl-badge fl-forbidden">禁止 {forbidden.length}</span>
+            )}
+          </div>
+          <ul className="fact-lock-list">
+            {confirmed.map((f, i) => (
+              <li key={`cf-${i}`} className="fl-item fl-item-confirmed">
+                <span className="fl-tag">已确认</span>
+                {f.fact}
+              </li>
+            ))}
+            {uncertain.map((f, i) => (
+              <li key={`uc-${i}`} className="fl-item fl-item-uncertain">
+                <span className="fl-tag">不确定</span>
+                {f.fact}
+                <span className="fl-reason">{f.reason}</span>
+              </li>
+            ))}
+            {forbidden.map((f, i) => (
+              <li key={`fb-${i}`} className="fl-item fl-item-forbidden">
+                <span className="fl-tag">禁止扩展</span>
+                {f.domain}
+                <span className="fl-reason">{f.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState("chat");
   const [backendStatus, setBackendStatus] = useState(null);
@@ -11,6 +74,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sources, setSources] = useState([]);
+  const [factLock, setFactLock] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -68,6 +132,7 @@ function App() {
         },
       ]);
       setSources(data.sources || []);
+      setFactLock(data.fact_lock || null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -201,6 +266,10 @@ function App() {
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {messages.length > 0 && (
+                <FactLockPanel factLock={factLock} />
               )}
             </aside>
           </div>

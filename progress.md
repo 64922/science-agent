@@ -232,5 +232,30 @@
   - `vite build` → 构建成功 (412ms)
   - 4/4 code review findings resolved
 
+### Issue 08: 事实清单与事实锁定流程
+- **Status:** complete
+- **Started:** 2026-07-09
+- Actions taken:
+  - 创建 `backend/fact_lock.py`：FactLockBuilder 类，调用 Qwen chat_structured 从问题 + 知识库证据中提取结构化事实清单
+  - 三类事实分类：confirmed（可确认，引用来源切片）、uncertain（不确定，标注原因）、forbidden（禁止扩展边界）
+  - `inject_constraint()` 将事实锁定约束注入系统提示词，核心规则"关键结论必须来自已确认事实列表"
+  - main.py: 初始化 FactLockBuilder，改造 `/api/chat` 流程为 先检索→再锁事实→最后生成回答（增加 1 次额外 LLM 调用）
+  - `/api/chat` 响应新增 `fact_lock` 字段，日志中自动记录事实清单
+  - App.jsx: 新增 `FactLockPanel` 组件 + `factLock` 状态
+  - App.css: 三类事实颜色编码（绿=已确认、黄=不确定、红=禁止扩展）
+- Files created/modified:
+  - backend/fact_lock.py (created — 113 lines)
+  - backend/main.py (updated — import + init + chat flow + response)
+  - frontend/src/App.jsx (updated — FactLockPanel component + factLock state)
+  - frontend/src/App.css (updated — fact lock panel styles)
+  - task_plan.md (updated — Issue 08 marked complete)
+  - findings.md (updated)
+- Verification:
+  - FactLockBuilder import OK
+  - main.py import OK（所有 6 个模块初始化正常）
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（29 modules, 415ms）
+  - 5/5 Acceptance Criteria met
+
 ---
 *每个阶段完成后或遇到错误时更新*

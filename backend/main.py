@@ -16,6 +16,7 @@ from scenario_router import ScenarioRouter  # noqa: E402
 from knowledge_store import KnowledgeStore  # noqa: E402
 from skill_generator import SkillGenerator  # noqa: E402
 from knowledge_retriever import KnowledgeRetriever  # noqa: E402
+from fact_lock import FactLockBuilder  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -84,6 +85,12 @@ skill_generator = None
 if llm_client is not None:
     skill_generator = SkillGenerator(llm_client)
     logger.info("SkillGenerator 初始化成功")
+
+# 初始化 FactLockBuilder（依赖 LLMClient）
+fact_lock_builder = None
+if llm_client is not None:
+    fact_lock_builder = FactLockBuilder(llm_client)
+    logger.info("FactLockBuilder 初始化成功")
 
 # 初始化 KnowledgeRetriever（ChromaDB 向量检索）
 knowledge_retriever = KnowledgeRetriever(knowledge_store=knowledge_store)
@@ -217,8 +224,12 @@ async def chat(req: ChatRequest):
             req.scenario_id, req.user_id
         )
         sources = knowledge_retriever.retrieve(req.message, top_k=5)
+        fact_lock = None
         if sources:
             system_prompt = _inject_evidence(system_prompt, sources)
+            if fact_lock_builder is not None:
+                fact_lock = fact_lock_builder.build(req.message, sources)
+                system_prompt = fact_lock_builder.inject_constraint(system_prompt, fact_lock)
         reply = llm_client.chat(system_prompt, req.message)
     except APIError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
@@ -229,4 +240,5 @@ async def chat(req: ChatRequest):
         "scenario_id": req.scenario_id,
         "scenario_name": scenario["name"],
         "sources": sources,
+        "fact_lock": fact_lock,
     }

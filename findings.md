@@ -17,6 +17,7 @@
 - Issue 05 完成：KnowledgeStore 按段落切分（`\n\n`）+ 长段落按句子边界二次切分（max 2000 字符），JSON 文件持久化到 `data/knowledge/`，前端通过主 Tab "知识库" 进入管理页
 - Issue 06 完成：SkillGenerator 调用 Qwen chat_structured 从切片中抽取核心概念/定义/误解/受众，每条知识点带 source_chunks 回溯，结果持久化为 `{doc_id}_skill.json`，前端 Skill 详情面板支持查看和重新生成
 - Issue 07 完成：KnowledgeRetriever 基于 ChromaDB 实现向量检索 + 关键词回退（bigram 分词 + 完整查询命中加权），上传文档自动索引，/api/chat 注入检索证据到系统提示词（MAX_EVIDENCE_CHARS=3000 / MAX_CHUNK_CHARS=800 预算控制），前端右侧新增"本轮引用证据"面板。ChromaDB 默认 all-MiniLM-L6-v2 嵌入模型对中文内容距离偏大，采用 EVIDENCE_CUTOFF=1.85 阈值判断无证据。ChunkDict / SourceDict TypedDict 消除 Primitive Obsession。code review 4 项全部修复：魔术数字命名化、关键词回退、TypedDict、token 预算
+- Issue 08 完成：FactLockBuilder 调用 Qwen chat_structured 从知识库资料中提取结构化事实清单（confirmed / uncertain / forbidden 三类），约束注入系统提示词确保最终回答不超出锁定边界。每次 /api/chat 先锁事实再生成回答，增加一次额外 LLM 调用。前端侧栏"事实锁定结果"以颜色标签区分三类事实。
 - docs/product-plan.md 已包含完整的 14 模块产品设计和 24 个 Issue 定义
 - 开发分 7 批顺序推进：基础骨架 → 知识库 → 画像 → 人味化 → 学习/多模态 → 评估 → 交付
 
