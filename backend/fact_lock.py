@@ -113,8 +113,8 @@ class FactLockBuilder:
         lines = []
         for s in sources:
             content = s["content"]
-            if len(content) > 600:
-                content = content[:600] + "…"
+            if len(content) > 800:
+                content = content[:800] + "…"
             lines.append(
                 f"[切片 #{s['chunk_index']}]（来源：《{s['doc_title']}》）\n{content}\n"
             )

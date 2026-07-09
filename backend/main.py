@@ -31,6 +31,8 @@ class ChatRequest(BaseModel):
 MAX_EVIDENCE_CHARS = 3000
 MAX_CHUNK_CHARS = 800
 
+EMPTY_FACT_LOCK = {"facts": {"confirmed": [], "uncertain": [], "forbidden": []}}
+
 
 def _inject_evidence(system_prompt: str, sources: list[dict]) -> str:
     """将检索到的知识切片注入系统提示词作为参考证据。
@@ -224,13 +226,21 @@ async def chat(req: ChatRequest):
             req.scenario_id, req.user_id
         )
         sources = knowledge_retriever.retrieve(req.message, top_k=5)
-        fact_lock = None
+        fact_lock = EMPTY_FACT_LOCK
         if sources:
             system_prompt = _inject_evidence(system_prompt, sources)
             if fact_lock_builder is not None:
                 fact_lock = fact_lock_builder.build(req.message, sources)
                 system_prompt = fact_lock_builder.inject_constraint(system_prompt, fact_lock)
         reply = llm_client.chat(system_prompt, req.message)
+        logger.info(
+            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d reply_len=%d",
+            req.user_id, req.scenario_id, len(sources),
+            len(fact_lock.get("facts", {}).get("confirmed", [])),
+            len(fact_lock.get("facts", {}).get("uncertain", [])),
+            len(fact_lock.get("facts", {}).get("forbidden", [])),
+            len(reply),
+        )
     except APIError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
