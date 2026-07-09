@@ -1,0 +1,13 @@
+# 环境变量（含密钥）
+.env
+
+# 依赖
+frontend/node_modules/
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE / 个人配置
+.claude/

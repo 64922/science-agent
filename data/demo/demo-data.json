@@ -1,0 +1,83 @@
+{
+  "demo_theme": {
+    "id": "immune_virus",
+    "title": "免疫系统如何识别病毒",
+    "description": "从抗原呈递到免疫记忆，一步步理解身体的防御机制。",
+    "topics": [
+      "病毒进入人体的途径",
+      "先天免疫与适应性免疫",
+      "抗原呈递与T细胞激活",
+      "B细胞与抗体产生",
+      "免疫记忆的形成"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "popular_science",
+      "name": "科普传播",
+      "output_types": ["short_article", "script", "comic"],
+      "requires_profile": true,
+      "requires_fact_check": true,
+      "style": "natural_public_friendly"
+    },
+    {
+      "id": "classroom_teaching",
+      "name": "课堂教学",
+      "output_types": ["lesson_plan", "quiz", "blackboard_outline"],
+      "requires_profile": true,
+      "requires_fact_check": true,
+      "style": "teacher_like"
+    },
+    {
+      "id": "research_presentation",
+      "name": "科研展示",
+      "output_types": ["presentation_outline", "abstract", "qa_script"],
+      "requires_profile": true,
+      "requires_fact_check": true,
+      "style": "rigorous_academic"
+    },
+    {
+      "id": "long_term_learning",
+      "name": "长期学习陪伴",
+      "output_types": ["lesson_plan", "review_questions", "next_step"],
+      "requires_profile": true,
+      "requires_fact_check": true,
+      "style": "companion_teacher"
+    }
+  ],
+  "demo_users": [
+    {
+      "id": "demo_user_a",
+      "name": "用户 A：高一学生",
+      "profile": {
+        "education_level": "高中一年级",
+        "knowledge_base": "高中生物基础较弱",
+        "interest_preference": "喜欢航天、游戏化类比",
+        "expression_style": "不要太学术，喜欢一步步讲",
+        "current_goal": "准备课堂展示"
+      }
+    },
+    {
+      "id": "demo_user_b",
+      "name": "用户 B：大学低年级学生",
+      "profile": {
+        "education_level": "大学低年级",
+        "knowledge_base": "知道基本术语，但概念不稳",
+        "interest_preference": "喜欢机制图和因果链",
+        "expression_style": "可以接受专业术语，但需要解释",
+        "current_goal": "准备课程汇报"
+      }
+    },
+    {
+      "id": "demo_user_c",
+      "name": "用户 C：科研新手",
+      "profile": {
+        "education_level": "研究生",
+        "knowledge_base": "具备专业基础",
+        "interest_preference": "关注证据来源和研究边界",
+        "expression_style": "严谨、克制、可用于组会",
+        "current_goal": "准备科研展示"
+      }
+    }
+  ]
+}
