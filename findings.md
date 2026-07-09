@@ -15,6 +15,7 @@
 - Issue 04 完成：ScenarioRouter 加载 demo-data.json 4 个场景配置，每个场景有独立系统提示词（科普→生动类比、课堂→提纲+思考题、科研→摘要+证据边界、陪伴→小节+学习建议），前端场景选择器标签栏 + 消息显示场景名称，10 个单元测试全部通过
 - Phase 1（Issues 01-04）全部完成，项目进入 Phase 2：知识库与事实校验
 - Issue 05 完成：KnowledgeStore 按段落切分（`\n\n`）+ 长段落按句子边界二次切分（max 2000 字符），JSON 文件持久化到 `data/knowledge/`，前端通过主 Tab "知识库" 进入管理页
+- Issue 06 完成：SkillGenerator 调用 Qwen chat_structured 从切片中抽取核心概念/定义/误解/受众，每条知识点带 source_chunks 回溯，结果持久化为 `{doc_id}_skill.json`，前端 Skill 详情面板支持查看和重新生成
 - docs/product-plan.md 已包含完整的 14 模块产品设计和 24 个 Issue 定义
 - 开发分 7 批顺序推进：基础骨架 → 知识库 → 画像 → 人味化 → 学习/多模态 → 评估 → 交付
 
@@ -24,6 +25,7 @@
 | 先做 MVP 可演示项目 | 核心是闭环完整，不是功能广度 |
 | 主演示主题：免疫系统如何识别病毒 | 科学性强、适合分层讲解、方便图解 |
 | 基座模型：千问 Qwen（百炼/DashScope） | 赛事硬性约束 |
+| 向量数据库选型 ChromaDB | 轻量嵌入、元数据过滤友好、Python 原生，适合 MVP 阶段的知识检索 + Phase 3 画像召回 |
 | LLM 调用使用 OpenAI SDK + DashScope 兼容 API | 百炼提供 `/compatible-mode/v1` 端点，OpenAI SDK 生态成熟 |
 | JSON 结构化输出失败自动重试（最多 3 次） | Qwen 偶发非 JSON 输出，重试可显著提高可靠性 |
 | 调用日志内存存储（CallLog dataclass） | MVP 阶段无数据库依赖，后续可迁入持久化存储 |

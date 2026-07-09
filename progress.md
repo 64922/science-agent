@@ -159,5 +159,28 @@
   - 404 on missing document
   - `vite build` → 29 modules, 458ms
 
+### Issue 06: 知识 Skill 生成与来源追踪
+- **Status:** complete
+- **Started:** 2026-07-09
+- Actions taken:
+  - 创建 `backend/skill_generator.py`：SkillGenerator 类，调用 Qwen chat_structured 从切片中抽取核心概念/定义/误解/受众
+  - 每个知识条目带 `source_chunks` 数组回溯到原始切片，`_validate_and_clean()` 做范围校验
+  - 后端新增 3 个端点：`POST generate-skill`、`GET skill`、`GET skills`
+  - 前端 KnowledgePage 新增 Skill 状态列（未生成/生成中/已就绪/失败）、生成/查看/重新生成按钮
+  - 前端 Skill 详情面板展示 4 类知识点 + 来源切片引用
+- Files created/modified:
+  - backend/skill_generator.py (created — 175 lines)
+  - backend/main.py (updated — 3 new endpoints + SkillGenerator init)
+  - frontend/src/KnowledgePage.jsx (rewritten — Skill generation + viewing)
+  - frontend/src/KnowledgePage.css (updated — Skill UI styles)
+  - README.md (updated — API table)
+  - task_plan.md (updated — Issue 06 marked complete)
+  - findings.md (updated)
+- Verification:
+  - SkillGenerator import OK
+  - main.py import OK (all 4 modules initialized)
+  - `vite build` → 29 modules, 439ms
+  - 5/5 Acceptance Criteria met
+
 ---
 *每个阶段完成后或遇到错误时更新*

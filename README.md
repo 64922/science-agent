@@ -88,6 +88,9 @@ npm run dev
 | POST | `/api/knowledge/upload` | 上传知识资料（.txt / .md） |
 | GET | `/api/knowledge/documents` | 已上传资料列表 |
 | GET | `/api/knowledge/documents/{id}` | 文档详情与切片 |
+| POST | `/api/knowledge/documents/{id}/generate-skill` | 生成知识 Skill |
+| GET | `/api/knowledge/documents/{id}/skill` | 获取已生成的 Skill |
+| GET | `/api/knowledge/skills` | 所有 Skill 摘要列表 |
 
 ## 演示数据
 

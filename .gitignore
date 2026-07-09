@@ -9,6 +9,10 @@ frontend/dist/
 __pycache__/
 *.pyc
 
+# 知识库运行时数据（_index.json 保留结构）
+data/knowledge/*.json
+!data/knowledge/_index.json
+
 # IDE / 个人配置
 .claude/
 笔记/

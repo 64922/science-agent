@@ -14,6 +14,7 @@ load_dotenv(_project_root / ".env")
 from llm_client import LLMClient, ConfigError, APIError  # noqa: E402
 from scenario_router import ScenarioRouter  # noqa: E402
 from knowledge_store import KnowledgeStore  # noqa: E402
+from skill_generator import SkillGenerator  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -52,6 +53,12 @@ logger.info("ScenarioRouter 初始化成功，已加载 %d 个场景", len(scena
 # 初始化 KnowledgeStore
 knowledge_store = KnowledgeStore()
 logger.info("KnowledgeStore 初始化成功，存储目录: %s", knowledge_store.storage_dir)
+
+# 初始化 SkillGenerator（依赖 LLMClient）
+skill_generator = None
+if llm_client is not None:
+    skill_generator = SkillGenerator(llm_client)
+    logger.info("SkillGenerator 初始化成功")
 
 
 @app.get("/api/health")
@@ -119,6 +126,42 @@ async def get_knowledge_document(doc_id: str):
     if doc is None:
         raise HTTPException(status_code=404, detail="文档不存在")
     return {"document": doc}
+
+
+@app.post("/api/knowledge/documents/{doc_id}/generate-skill")
+async def generate_skill(doc_id: str):
+    """为指定文档生成知识 Skill。"""
+    if skill_generator is None:
+        raise HTTPException(status_code=503, detail="LLM 服务未就绪，无法生成 Skill")
+    doc = knowledge_store.get_document(doc_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+    try:
+        result = skill_generator.generate(doc)
+        return {"status": "ok", "skill": result}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Skill 生成失败: {exc}")
+
+
+@app.get("/api/knowledge/documents/{doc_id}/skill")
+async def get_skill(doc_id: str):
+    """获取指定文档的已生成 Skill。"""
+    if skill_generator is None:
+        raise HTTPException(status_code=503, detail="LLM 服务未就绪")
+    skill = skill_generator.get_skill(doc_id)
+    if skill is None:
+        raise HTTPException(status_code=404, detail="该文档尚未生成 Skill")
+    return {"skill": skill}
+
+
+@app.get("/api/knowledge/skills")
+async def list_skills():
+    """列出所有已生成的 Skill 摘要。"""
+    if skill_generator is None:
+        return {"skills": []}
+    return {"skills": skill_generator.list_skills()}
 
 
 @app.post("/api/chat")

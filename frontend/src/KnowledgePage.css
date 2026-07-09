@@ -135,3 +135,142 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Skill 状态标记 */
+.skill-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.skill-badge.none {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.skill-badge.generating {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.skill-badge.ready {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.skill-badge.error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* 操作按钮 */
+.kp-actions {
+  white-space: nowrap;
+}
+
+.kp-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-right: 6px;
+  transition: background 0.15s;
+}
+
+.kp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kp-btn-gen {
+  color: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.kp-btn-gen:hover:not(:disabled) {
+  background: #eef2ff;
+}
+
+.kp-btn-view {
+  color: #065f46;
+  border-color: #059669;
+}
+
+.kp-btn-view:hover:not(:disabled) {
+  background: #ecfdf5;
+}
+
+/* Skill 详情面板 */
+.kp-skill-detail {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.kp-skill-detail h3 {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+}
+
+.skill-section {
+  margin-bottom: 20px;
+}
+
+.skill-section h4 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
+}
+
+.skill-item {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: #fff;
+  border-radius: 4px;
+  border: 1px solid #f3f4f6;
+}
+
+.skill-item strong {
+  color: #1f2937;
+}
+
+.skill-item p {
+  margin: 4px 0;
+  color: #4b5563;
+  font-size: 0.88rem;
+}
+
+.skill-item.misconception {
+  border-left: 3px solid #f59e0b;
+}
+
+.skill-item.audience {
+  border-left: 3px solid #4f46e5;
+}
+
+.skill-sources {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.skill-none {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.skill-generated-at {
+  color: #9ca3af;
+  font-size: 0.78rem;
+  margin: 0;
+}

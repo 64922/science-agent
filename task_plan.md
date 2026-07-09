@@ -35,7 +35,7 @@ Phase 2
   - 知识库管理页
   - 支持 .txt / .md 上传
   - 文本清洗、切分、保存
-- [ ] **Issue 06**: 知识 Skill 生成与来源追踪
+- [x] **Issue 06**: 知识 Skill 生成与来源追踪
   - 调用 Qwen 抽取核心概念、定义、常见误解、适用受众
   - 每条知识点可追踪到原始切片
   - 前端查看 Skill 内容
@@ -121,7 +121,7 @@ Phase 2
 ## Key Questions
 1. ~~前端技术栈选型~~ → Vite + React 18
 2. ~~后端技术栈选型~~ → Python FastAPI
-3. 向量数据库选型（ChromaDB / Milvus / FAISS？）
+3. ~~向量数据库选型（ChromaDB / Milvus / FAISS？）~~ → ChromaDB
 4. 是否使用百炼平台的原生 API 还是 DashScope SDK？
 5. ~~演示用户数据是纯前端 mock 还是后端种子数据？~~ → JSON 种子数据 (data/demo/demo-data.json)
 
