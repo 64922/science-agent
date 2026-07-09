@@ -9,6 +9,12 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TypedDict
+
+
+class ChunkDict(TypedDict):
+    chunk_index: int
+    content: str
 
 logger = logging.getLogger("knowledge_store")
 

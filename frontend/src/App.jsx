@@ -10,6 +10,7 @@ function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [sources, setSources] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -66,6 +67,7 @@ function App() {
           scenarioName: data.scenario_name,
         },
       ]);
+      setSources(data.sources || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -131,50 +133,77 @@ function App() {
             ))}
           </nav>
 
-          <main className="chat-area">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`message ${msg.role}`}>
-                <div className="message-role">
-                  {msg.role === "user"
-                    ? "你"
-                    : msg.scenarioName
-                      ? `知己 · ${msg.scenarioName}`
-                      : "知己"}
-                </div>
-                <div className="message-content">{msg.content}</div>
-              </div>
-            ))}
+          <div className="chat-container">
+            <div className="chat-main">
+              <main className="chat-area">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`message ${msg.role}`}>
+                    <div className="message-role">
+                      {msg.role === "user"
+                        ? "你"
+                        : msg.scenarioName
+                          ? `知己 · ${msg.scenarioName}`
+                          : "知己"}
+                    </div>
+                    <div className="message-content">{msg.content}</div>
+                  </div>
+                ))}
 
-            {loading && (
-              <div className="message assistant">
-                <div className="message-role">知己 · {currentLabel}</div>
-                <div className="message-content loading">思考中...</div>
-              </div>
-            )}
+                {loading && (
+                  <div className="message assistant">
+                    <div className="message-role">知己 · {currentLabel}</div>
+                    <div className="message-content loading">思考中...</div>
+                  </div>
+                )}
 
-            {error && (
-              <div className="error-banner">
-                出错了：{error}
-                <button onClick={() => setError(null)}>关闭</button>
-              </div>
-            )}
+                {error && (
+                  <div className="error-banner">
+                    出错了：{error}
+                    <button onClick={() => setError(null)}>关闭</button>
+                  </div>
+                )}
 
-            <div ref={messagesEndRef} />
-          </main>
+                <div ref={messagesEndRef} />
+              </main>
 
-          <footer className="chat-input-area">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={`在「${currentLabel}」场景下提问，按 Enter 发送...`}
-              disabled={loading}
-            />
-            <button onClick={handleSend} disabled={loading || !input.trim()}>
-              发送
-            </button>
-          </footer>
+              <footer className="chat-input-area">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={`在「${currentLabel}」场景下提问，按 Enter 发送...`}
+                  disabled={loading}
+                />
+                <button onClick={handleSend} disabled={loading || !input.trim()}>
+                  发送
+                </button>
+              </footer>
+            </div>
+
+            <aside className="citation-panel">
+              <h3>本轮引用证据</h3>
+              {messages.length === 0 ? (
+                <p className="citation-empty">发送问题后显示引用证据</p>
+              ) : sources.length === 0 ? (
+                <p className="citation-empty">当前知识库证据不足</p>
+              ) : (
+                <ul className="citation-list">
+                  {sources.map((s, i) => (
+                    <li key={i} className="citation-item">
+                      <div className="citation-header">
+                        <span className="citation-index">#{i + 1}</span>
+                        <span className="citation-source">
+                          《{s.doc_title}》· 切片 #{s.chunk_index}
+                        </span>
+                      </div>
+                      <p className="citation-content">{s.content}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </aside>
+          </div>
         </>
       )}
 

@@ -15,6 +15,7 @@ from llm_client import LLMClient, ConfigError, APIError  # noqa: E402
 from scenario_router import ScenarioRouter  # noqa: E402
 from knowledge_store import KnowledgeStore  # noqa: E402
 from skill_generator import SkillGenerator  # noqa: E402
+from knowledge_retriever import KnowledgeRetriever  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -24,6 +25,30 @@ class ChatRequest(BaseModel):
     user_id: str
     message: str
     scenario_id: str = "popular_science"
+
+
+MAX_EVIDENCE_CHARS = 3000
+MAX_CHUNK_CHARS = 800
+
+
+def _inject_evidence(system_prompt: str, sources: list[dict]) -> str:
+    """将检索到的知识切片注入系统提示词作为参考证据。
+
+    总证据量不超过 MAX_EVIDENCE_CHARS，单切片不超过 MAX_CHUNK_CHARS，
+    防止溢出模型上下文窗口。
+    """
+    lines = ["\n\n【知识库参考证据】\n以下是从知识库中检索到的相关资料，请在回答中参考这些事实，并引用来源：\n"]
+    total = 0
+    for i, s in enumerate(sources, 1):
+        content = s["content"]
+        if len(content) > MAX_CHUNK_CHARS:
+            content = content[:MAX_CHUNK_CHARS] + "…"
+        line = f"[{i}]（来源：《{s['doc_title']}》，切片 #{s['chunk_index']}）\n{content}\n"
+        if total + len(line) > MAX_EVIDENCE_CHARS:
+            break
+        lines.append(line)
+        total += len(line)
+    return system_prompt + "\n".join(lines)
 
 
 app = FastAPI(title="知己科教 Agent", version="0.1.0")
@@ -59,6 +84,13 @@ skill_generator = None
 if llm_client is not None:
     skill_generator = SkillGenerator(llm_client)
     logger.info("SkillGenerator 初始化成功")
+
+# 初始化 KnowledgeRetriever（ChromaDB 向量检索）
+knowledge_retriever = KnowledgeRetriever(knowledge_store=knowledge_store)
+if knowledge_retriever.ready:
+    knowledge_retriever.sync_from_store()
+else:
+    logger.warning("KnowledgeRetriever 未就绪，知识检索功能不可用")
 
 
 @app.get("/api/health")
@@ -110,6 +142,9 @@ async def upload_knowledge(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="文件内容为空")
 
     doc = knowledge_store.upload(filename, content)
+    full_doc = knowledge_store.get_document(doc["id"])
+    if full_doc:
+        knowledge_retriever.add_document(doc["id"], doc["title"], full_doc.get("chunks", []))
     return {"status": "ok", "document": doc}
 
 
@@ -181,6 +216,9 @@ async def chat(req: ChatRequest):
         system_prompt = scenario_router.build_system_prompt(
             req.scenario_id, req.user_id
         )
+        sources = knowledge_retriever.retrieve(req.message, top_k=5)
+        if sources:
+            system_prompt = _inject_evidence(system_prompt, sources)
         reply = llm_client.chat(system_prompt, req.message)
     except APIError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
@@ -190,4 +228,5 @@ async def chat(req: ChatRequest):
         "user_id": req.user_id,
         "scenario_id": req.scenario_id,
         "scenario_name": scenario["name"],
+        "sources": sources,
     }

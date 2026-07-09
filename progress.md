@@ -182,5 +182,55 @@
   - `vite build` → 29 modules, 439ms
   - 5/5 Acceptance Criteria met
 
+### Issue 07: 基础知识检索与引用回答
+- **Status:** complete
+- **Started:** 2026-07-09
+- Actions taken:
+  - 创建 `backend/knowledge_retriever.py`：KnowledgeRetriever 类，基于 ChromaDB 向量检索
+  - 上传文档时自动索引切片到 ChromaDB（upload 端点联动）
+  - `/api/chat` 检索 Top 5 相关切片，注入系统提示词作为参考证据
+  - 响应新增 `sources` 字段（doc_id, doc_title, chunk_index, content, relevance）
+  - `best_distance > 1.85` 阈值判断无证据 → 返回空 sources
+  - 前端 App.jsx 新增 `sources` 状态和右侧"本轮引用证据"面板
+  - 前端 App.css 两列布局（chat-main + citation-panel），280px 侧栏
+  - sources 为空时显示"当前知识库证据不足"
+- Files created/modified:
+  - backend/knowledge_retriever.py (created — 109 lines)
+  - backend/main.py (updated — import + init + _inject_evidence + upload 联动 + chat 检索)
+  - backend/requirements.txt (updated — chromadb>=0.5.0)
+  - .gitignore (updated — data/chromadb/)
+  - frontend/src/App.jsx (updated — sources state + citation panel + 两列布局)
+  - frontend/src/App.css (updated — chat-container/chat-main/citation-panel 样式)
+  - task_plan.md (updated — Issue 07 marked complete)
+  - findings.md (updated)
+- Verification:
+  - KnowledgeRetriever 初始化成功（import chromadb OK）
+  - `main.py` import OK（所有 5 个模块初始化正常）
+  - 相关查询 ("T cells immune") → 返回 2 sources
+  - 无关查询 ("quantum physics") → 返回 0 sources（证据不足）
+  - `vite build` → 构建成功（421ms）
+  - 5/5 Acceptance Criteria met
+
+### Code Review: Issue 07 修复 (2026-07-09)
+- **Status:** complete
+- Actions taken:
+  - Standards: 魔术数字 `1.85`/`0.25` → 命名常量 `EVIDENCE_CUTOFF`/`SIBLING_TOLERANCE` + 注释
+  - Standards: Primitive Obsession → `ChunkDict`/`SourceDict` TypedDict 定义在 `knowledge_store.py`，`knowledge_retriever.py` 引用
+  - Spec: 无关键词回退 → `_keyword_search()` 方法（bigram 分词 + 完整查询加权），`retrieve()` 向量无结果时自动回退
+  - Spec: `_inject_evidence` 无 token 预算 → `MAX_EVIDENCE_CHARS=3000` / `MAX_CHUNK_CHARS=800` 截断控制
+  - Spec: 初始加载时显示"证据不足" → 增加 `messages.length === 0` 判断，无消息时显示"发送问题后显示引用证据"
+  - 移除 SIBLING_TOLERANCE 兄弟过滤（配合关键词回退后不再需要）
+- Files modified:
+  - backend/knowledge_store.py (+5 lines — ChunkDict TypedDict)
+  - backend/knowledge_retriever.py (rewritten — +keyword fallback, +SourceDict, -sibling filter)
+  - backend/main.py (+5 lines — MAX_EVIDENCE_CHARS / MAX_CHUNK_CHARS)
+  - frontend/src/App.jsx (+2 lines — messages.length check)
+  - findings.md (updated)
+- Verification:
+  - `pytest test_scenario_router.py -v` → 10 passed
+  - Keyword search "免疫系统" → 3 results (top relevance=1.0)
+  - `vite build` → 构建成功 (412ms)
+  - 4/4 code review findings resolved
+
 ---
 *每个阶段完成后或遇到错误时更新*
