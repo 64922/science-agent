@@ -1,6 +1,68 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import KnowledgePage from "./KnowledgePage";
 
+function getRiskShortLabel(signal) {
+  if (signal.startsWith("绝对化")) return "绝对化";
+  if (signal.startsWith("具体数字") || signal.startsWith("具体百分比")) return "数字";
+  if (signal.startsWith("医学")) return "医学";
+  if (signal.startsWith("实验安全")) return "安全";
+  if (signal.startsWith("因果外推")) return "外推";
+  return "其他";
+}
+
+function RiskPanel({ riskReport }) {
+  if (!riskReport) {
+    return (
+      <>
+        <h3>风险检测结果</h3>
+        <p className="citation-empty">暂无风险检测数据</p>
+      </>
+    );
+  }
+
+  const risks = riskReport.risks || [];
+
+  return (
+    <>
+      <h3>风险检测结果</h3>
+      {risks.length === 0 ? (
+        <p className="citation-empty">未检测到高风险表述</p>
+      ) : (
+        <>
+          <div className="risk-summary">
+            <span className="risk-badge risk-badge-count">
+              发现 {risks.length} 处风险
+            </span>
+          </div>
+          <ul className="risk-list">
+            {risks.map((r, i) => (
+              <li key={i} className="risk-item">
+                <div className="risk-sentence">"{r.sentence}"</div>
+                <div className="risk-signals">
+                  {r.signals.map((sig) => {
+                    const short = getRiskShortLabel(sig);
+                    return (
+                      <span key={sig} className={`risk-signal-tag risk-tag-${short}`}>
+                        {sig}
+                      </span>
+                    );
+                  })}
+                </div>
+                {r.repaired && (
+                  <div className="risk-repaired">
+                    <span className="risk-repaired-label">建议修改：</span>
+                    "{r.repaired}"
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  );
+}
+
 function FactLockPanel({ factLock }) {
   if (!factLock) {
     return (
@@ -75,6 +137,7 @@ function App() {
   const [error, setError] = useState(null);
   const [sources, setSources] = useState([]);
   const [factLock, setFactLock] = useState(null);
+  const [riskReport, setRiskReport] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -133,6 +196,7 @@ function App() {
       ]);
       setSources(data.sources || []);
       setFactLock(data.fact_lock || null);
+      setRiskReport(data.risk_report || null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -270,6 +334,10 @@ function App() {
 
               {messages.length > 0 && (
                 <FactLockPanel factLock={factLock} />
+              )}
+
+              {messages.length > 0 && (
+                <RiskPanel riskReport={riskReport} />
               )}
             </aside>
           </div>

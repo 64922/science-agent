@@ -17,6 +17,7 @@ from knowledge_store import KnowledgeStore  # noqa: E402
 from skill_generator import SkillGenerator  # noqa: E402
 from knowledge_retriever import KnowledgeRetriever  # noqa: E402
 from fact_lock import FactLockBuilder  # noqa: E402
+from risk_detector import RiskDetector  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -93,6 +94,10 @@ fact_lock_builder = None
 if llm_client is not None:
     fact_lock_builder = FactLockBuilder(llm_client)
     logger.info("FactLockBuilder 初始化成功")
+
+# 初始化 RiskDetector（纯规则引擎，不依赖 LLMClient）
+risk_detector = RiskDetector()
+logger.info("RiskDetector 初始化成功")
 
 # 初始化 KnowledgeRetriever（ChromaDB 向量检索）
 knowledge_retriever = KnowledgeRetriever(knowledge_store=knowledge_store)
@@ -233,12 +238,14 @@ async def chat(req: ChatRequest):
                 fact_lock = fact_lock_builder.build(req.message, sources)
                 system_prompt = fact_lock_builder.inject_constraint(system_prompt, fact_lock)
         reply = llm_client.chat(system_prompt, req.message)
+        risk_report = risk_detector.analyze(reply)
         logger.info(
-            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d reply_len=%d",
+            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d risks=%d reply_len=%d",
             req.user_id, req.scenario_id, len(sources),
             len(fact_lock.get("facts", {}).get("confirmed", [])),
             len(fact_lock.get("facts", {}).get("uncertain", [])),
             len(fact_lock.get("facts", {}).get("forbidden", [])),
+            risk_report["risk_count"],
             len(reply),
         )
     except APIError as exc:
@@ -251,4 +258,5 @@ async def chat(req: ChatRequest):
         "scenario_name": scenario["name"],
         "sources": sources,
         "fact_lock": fact_lock,
+        "risk_report": risk_report,
     }

@@ -257,5 +257,55 @@
   - `vite build` → 构建成功（29 modules, 415ms）
   - 5/5 Acceptance Criteria met
 
+### Issue 09: 风险信号检测与幻觉抑制
+- **Status:** complete
+- **Started:** 2026-07-09
+- Actions taken:
+  - 创建 `backend/risk_detector.py`：RiskDetector 类，纯规则引擎（无额外 LLM 调用）
+  - 5 类风险检测：绝对化表达（11 个正则模式）、数字/百分比、医学建议、实验安全、因果外推
+  - `_repair()` 降级映射：10 组替换规则（"所有"→"大多数"、"一定"→"很可能"等）
+  - main.py: 集成 RiskDetector，`/api/chat` 在 LLM 生成回答后执行 `risk_detector.analyze()`
+  - `/api/chat` 响应新增 `risk_report` 字段，日志中自动记录风险数量
+  - App.jsx: 新增 `RiskPanel` 组件 + `riskReport` 状态
+  - App.css: 风险检测结果样式（黄色警告底色、颜色标签区分风险类型、建议修改文本绿色背景）
+- Files created/modified:
+  - backend/risk_detector.py (created — 123 lines)
+  - backend/main.py (updated — import + init + chat flow + response + logging)
+  - frontend/src/App.jsx (updated — RiskPanel component + riskReport state)
+  - frontend/src/App.css (updated — risk panel styles, ~70 lines)
+  - task_plan.md (updated — Issue 09 marked complete, Phase 2 status → complete)
+  - findings.md (updated)
+- Verification:
+  - RiskDetector import OK（所有 7 个模块初始化正常）
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（444ms）
+  - 5/5 Acceptance Criteria met
+  - Smoke test: 绝对化检测（2/2）、数字检测（2/2）、医学检测（2/2）、干净文本（0）、降级修复（正确替换）
+- **Phase 2 全部完成（Issues 05-09）**
+
+### Code Review: Issue 09 修复 (2026-07-09)
+- **Status:** complete
+- Actions taken:
+  - Standards S1: `_detect_signals` 重复循环体 → 提取 `_match_patterns()` 静态方法，消除 4 次重复
+  - Standards S2: `.risk-tag-医学` / `.risk-tag-安全` 完全相同的 CSS → 合并选择器
+  - Standards S3: `_repair` 用 `str.replace` 误改"不一定" → `_downgrade` 增加 `DOWNGRADE_NEGATION` 否定上下文保护
+  - Standards S4: `_repair` 命名不明确 → 重命名为 `_downgrade`
+  - Standards S5: `DOWNGRADE_MAP` 为 `list[tuple]` → 改为 `dict` 语义类型
+  - Spec P2: 实验安全仅 1 个模式 → 扩展至 4 个模式（护目镜/手套、避免接触、通风橱等）
+  - Spec P3: 数字检测过宽（"2024年""25度"误报）→ 收窄为仅检测含约/大约/超过/万/亿/倍的上下文
+  - Spec P5: 医学模式把"抗生素用于治疗"事实陈述误标 → 收窄为仅匹配建议性表达（应该/建议/请/遵循医嘱）
+  - Spec P1/P4: "无证据"判定和因果外推误匹配 → 纯规则引擎固有局限，非本 Issue 范围，记录不修复
+- Files modified:
+  - backend/risk_detector.py (rewritten — ~165 lines, all fixes applied)
+  - frontend/src/App.css (updated — combined duplicate selectors)
+- Verification:
+  - "不一定是正确的" 不触发降级（否定保护生效）
+  - 实验安全从 1 模式扩展至 4 模式（4/4 检测）
+  - 数字检测："约95%"和"超过300万"标记，"2024年""25度"不再误报
+  - 医学检测："抗生素用于治疗"不再误报，"你应该服用""遵循医嘱"正确标记
+  - AC1 回归：3/3 绝对化表达正常检测
+  - `pytest` → 10 passed | `vite build` → 421ms
+  - 8/9 findings resolved（1 项设计限制不修复）
+
 ---
 *每个阶段完成后或遇到错误时更新*
