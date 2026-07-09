@@ -9,7 +9,7 @@
 
 ## Research Findings
 - 项目当前为空仓库，从零开始构建
-- brief.md 已包含完整的 14 模块产品设计和 24 个 Issue 定义
+- docs/product-plan.md 已包含完整的 14 模块产品设计和 24 个 Issue 定义
 - 开发分 7 批顺序推进：基础骨架 → 知识库 → 画像 → 人味化 → 学习/多模态 → 评估 → 交付
 
 ## Technical Decisions
@@ -26,7 +26,7 @@
 |       |            |
 
 ## Resources
-- brief.md — 完整产品设计文档（14 模块 + 24 Issue）
+- docs/product-plan.md — 完整产品设计文档（14 模块 + 24 Issue）
 - task_plan.md — 任务路线图
 
 ## Visual/Browser Findings

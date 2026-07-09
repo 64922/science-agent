@@ -19,7 +19,7 @@
 - **Status:** complete
 - **Started:** 2026-07-09
 - Actions taken:
-  - 根据 brief.md 的 24 个 Issue 填充 task_plan.md
+  - 根据 docs/product-plan.md 的 24 个 Issue 填充 task_plan.md
   - 更新 findings.md 记录需求和决策
   - 项目进入 Phase 1: 基础骨架与模型接入
 - Files created/modified:
@@ -64,7 +64,7 @@
 | Where am I? | Phase 1 — 开始 Issue 01（项目骨架初始化） |
 | Where am I going? | 按 7 批顺序推进，先跑通后端 API + 前端对话 + 场景路由 |
 | What's the goal? | 构建知己科教 Agent MVP，完整跑通画像-事实-人味化-多模态-评估闭环 |
-| What have I learned? | brief.md 已定义 24 个 Issue，开发分 7 批顺序执行 |
+| What have I learned? | docs/product-plan.md 已定义 24 个 Issue，开发分 7 批顺序执行 |
 | What have I done? | 已将 task_plan.md 按 24 个 Issue 填实，规划文件就绪 |
 
 ---
