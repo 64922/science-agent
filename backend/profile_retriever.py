@@ -3,6 +3,8 @@
 import logging
 from datetime import datetime, timezone
 
+from profile_store import PROFILE_CATEGORIES
+
 logger = logging.getLogger("profile_retriever")
 
 # 场景 → 画像类别相关性权重（0-1）
@@ -165,5 +167,6 @@ class ProfileRetriever:
             "以下是根据用户学习背景和偏好匹配的画像信息，请在回答中参考这些信息，调整讲解深度、举例方式和表达风格：\n",
         ]
         for p in selected_profiles:
-            lines.append(f"- {p['profile_key']}：{p['profile_value']}（{p['reason']}）")
+            label = PROFILE_CATEGORIES.get(p["profile_key"], p["profile_key"])
+            lines.append(f"- {label}：{p['profile_value']}（{p['reason']}）")
         return "\n".join(lines)
