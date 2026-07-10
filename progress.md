@@ -125,11 +125,11 @@
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 1 完成，准备 Phase 2（知识库与事实校验，Issues 05-09） |
-| Where am I going? | Phase 2: 知识上传→Skill 生成→检索→事实锁定→幻觉抑制 |
+| Where am I? | Phase 3 全部完成，准备 Phase 4（人味化与反馈闭环，Issues 14-16） |
+| Where am I going? | Phase 4: 人味化→反馈按钮→迭代日志 |
 | What's the goal? | 构建知己科教 Agent MVP，完整跑通画像-事实-人味化-多模态-评估闭环 |
-| What have I learned? | ScenarioRouter 模式正确——4 套场景提示词产生明显不同的回答结构 |
-| What have I done? | Phase 1 全部完成（Issues 01-04）：骨架→LLM→对话→场景路由 |
+| What have I learned? | 画像闭环（Issues 10-13）完整跑通：Schema→提取→确认→授权→召回→注入，ProfileRetriever 5 因素评分公式有效区分不同用户/场景的画像排序 |
+| What have I done? | Phase 1-3 全部完成（Issues 01-13）：骨架→LLM→对话→场景→知识库→事实校验→画像系统 |
 
 ### Issue 05: 知识资料上传与文本切分
 - **Status:** complete
@@ -332,6 +332,56 @@
   - Profile CRUD 冒烟测试：增/查/改/删 全部通过
   - 3 个演示用户各 5 条种子画像正确写入
   - 5/5 Acceptance Criteria met
+
+### Issue 11: 对话中提取画像候选
+- **Status:** complete
+- **Started:** 2026-07-10
+- Actions taken:
+  - 创建 `backend/profile_extractor.py`：ProfileExtractor 类，调用 Qwen chat_structured 从用户消息中提取画像候选
+  - 8 类画像字段的提取提示词，confidence 阈值 0.3 以下不提取
+  - `/api/chat` 每次调用 extract() 返回候选列表（不写入 ProfileStore）
+  - 新增 `POST /api/profile/{user_id}/confirm` 端点（remember / session_only / deny 批量处理）
+  - App.jsx: 新增 `ProfileCandidateCard` 组件，支持记住/仅本次/不要记/修改后记住 4 种操作
+  - App.css: `.profile-candidate-card` / `.pcc-*` 样式（蓝色卡片 + 内联编辑）
+- Files created/modified:
+  - backend/profile_extractor.py (created — 96 lines)
+  - backend/main.py (updated — ProfileExtractor init + chat flow + ConfirmRequest + confirm endpoint)
+  - frontend/src/App.jsx (updated — ProfileCandidateCard + profileCandidates state + handleConfirmCandidates)
+  - frontend/src/App.css (updated — profile candidate card styles, ~120 lines)
+  - frontend/src/constants.js (created — CATEGORY_LABELS, AUTH_LABELS, DEMO_USERS)
+- Verification:
+  - ProfileExtractor import OK
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功
+  - 5/5 Acceptance Criteria met
+- **Commit:** `bfd5565`
+
+### Issue 12: 画像授权、撤回与暂停记忆
+- **Status:** complete
+- **Started:** 2026-07-10
+- Actions taken:
+  - ProfileStore 新增授权管理方法：revoke_profile / revoke_category / set_memory_pause / get_memory_status / get_audit_log / get_authorized_profiles
+  - JSONL 审计日志（_{user_id}_audit.jsonl，追加模式）+ 记忆暂停状态文件（_{user_id}_memory.json）
+  - `get_authorized_profiles()` 返回 (authorized, skipped) 双列表，过滤逻辑：paused → 全部跳过；revoked/denied → 跳过
+  - 后端新增 6 个端点：revoke / revoke-category / memory-pause / memory-resume / memory-status / audit-log
+  - `/api/chat` 记录画像跳过日志（profile_skip_log）
+  - ProfilePage.jsx: 撤回按钮 + 暂停记忆按钮 + 可折叠审计日志面板
+  - 审计日志使用 ACTION_LABELS / ACTION_TARGET 查找表（code review 修复 Repeated Switches）
+  - ProfilePage.css: 撤回/暂停/审计日志样式（+178 lines）
+- Files created/modified:
+  - backend/profile_store.py (updated — +126 lines, 7 new methods + 2 file helpers)
+  - backend/main.py (updated — +53 lines, 6 new endpoints + chat skip log)
+  - frontend/src/ProfilePage.jsx (updated — +118 lines, revoke/pause/audit UI)
+  - frontend/src/ProfilePage.css (updated — +178 lines, new component styles)
+  - frontend/src/App.jsx (updated — +17 lines, profileSkipLog state + display)
+  - frontend/src/App.css (updated — +22 lines, skip-log styles)
+- Verification:
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（32 modules, 433ms）
+  - ProfileStore smoke test: 授权/撤回/暂停/审计全部通过
+  - Code review: 7 findings → 6 fixed, 1 deferred (authorized for Issue 13)
+  - 5/5 Acceptance Criteria met
+- **Commit:** `a93f322`
 
 ### Issue 13: 画像场景化召回并影响回答
 - **Status:** complete
