@@ -8,7 +8,7 @@
 - 4 个标准场景：科普传播、课堂教学、科研展示、长期学习陪伴
 
 ## Research Findings
-- 项目于 2026-07-08 从空仓库初始化，当前 Phase 1（Issues 01-04）
+- 项目于 2026-07-08 从空仓库初始化，当前 Phase 4（Issues 14-16）
 - Issue 01 完成：项目骨架、FastAPI + React、演示数据就绪
 - Issue 02 完成：LLMClient 统一封装，通过 OpenAI SDK 调用百炼 Qwen
 - Issue 03 完成：基础对话工作台（/api/chat + 前端聊天界面），系统提示词不含画像注入，画像和场景选择器归后续 Issue

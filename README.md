@@ -12,6 +12,7 @@ science-agent/
 ├── backend/           # 后端 (Python FastAPI)
 ├── data/              # 数据目录
 │   ├── knowledge/     #   知识库文件
+│   ├── profiles/      #   用户画像数据
 │   ├── eval/          #   评估数据集
 │   └── demo/          #   演示数据
 ├── docs/              # 文档
@@ -91,6 +92,19 @@ npm run dev
 | POST | `/api/knowledge/documents/{id}/generate-skill` | 生成知识 Skill |
 | GET | `/api/knowledge/documents/{id}/skill` | 获取已生成的 Skill |
 | GET | `/api/knowledge/skills` | 所有 Skill 摘要列表 |
+| GET | `/api/profile/{user_id}` | 查看用户画像 |
+| POST | `/api/profile/{user_id}` | 新增画像条目 |
+| PUT | `/api/profile/{user_id}/{profile_id}` | 更新画像条目 |
+| DELETE | `/api/profile/{user_id}/{profile_id}` | 删除画像条目 |
+| GET | `/api/profile/categories` | 画像字段定义 |
+| POST | `/api/profile/{user_id}/confirm` | 确认画像候选 |
+| POST | `/api/profile/{user_id}/preference/{profile_id}` | 调整画像偏好权重 |
+| POST | `/api/profile/{user_id}/revoke/{profile_id}` | 撤回单条画像授权 |
+| POST | `/api/profile/{user_id}/revoke-category/{category_key}` | 撤回某类画像授权 |
+| POST | `/api/profile/{user_id}/memory-pause` | 暂停全部记忆 |
+| POST | `/api/profile/{user_id}/memory-resume` | 恢复全部记忆 |
+| GET | `/api/profile/{user_id}/memory-status` | 记忆暂停状态 |
+| GET | `/api/profile/{user_id}/audit-log` | 授权变更审计日志 |
 
 ## 演示数据
 
