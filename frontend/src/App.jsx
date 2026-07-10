@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import KnowledgePage from "./KnowledgePage";
+import ProfilePage from "./ProfilePage";
 
 function getRiskShortLabel(signal) {
   if (signal.startsWith("绝对化")) return "绝对化";
@@ -245,6 +246,12 @@ function App() {
         >
           知识库
         </button>
+        <button
+          className={`main-tab ${activeTab === "profile" ? "active" : ""}`}
+          onClick={() => setActiveTab("profile")}
+        >
+          我的画像
+        </button>
       </nav>
 
       {activeTab === "chat" && (
@@ -345,6 +352,8 @@ function App() {
       )}
 
       {activeTab === "knowledge" && <KnowledgePage />}
+
+      {activeTab === "profile" && <ProfilePage />}
     </div>
   );
 }

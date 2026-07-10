@@ -1,0 +1,62 @@
+[
+  {
+    "id": "35c071884ab2",
+    "user_id": "demo_user_a",
+    "profile_key": "basic_info",
+    "profile_value": "高中一年级",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "70aa0e1c98d2",
+    "user_id": "demo_user_a",
+    "profile_key": "knowledge_level",
+    "profile_value": "高中生物基础较弱",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "e840df77ee41",
+    "user_id": "demo_user_a",
+    "profile_key": "interest_preference",
+    "profile_value": "喜欢航天、游戏化类比",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "a39dc638d574",
+    "user_id": "demo_user_a",
+    "profile_key": "expression_habit",
+    "profile_value": "不要太学术，喜欢一步步讲",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "3ab510ec193f",
+    "user_id": "demo_user_a",
+    "profile_key": "stage_goal",
+    "profile_value": "准备课堂展示",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  }
+]

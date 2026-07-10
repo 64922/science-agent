@@ -307,5 +307,28 @@
   - `pytest` → 10 passed | `vite build` → 421ms
   - 8/9 findings resolved（1 项设计限制不修复）
 
----
-*每个阶段完成后或遇到错误时更新*
+### Issue 10: 用户画像 Schema 与画像管理页
+- **Status:** complete
+- **Started:** 2026-07-10
+- Actions taken:
+  - 创建 `backend/profile_store.py`：ProfileStore 类，8 类画像字段 CRUD + JSON 文件持久化
+  - 后端新增 5 个端点：`GET /api/profile/{user_id}`、`POST`、`PUT`、`DELETE`、`GET /api/profile/{user_id}/categories`
+  - 启动时自动从 demo-data.json 种子 3 个演示用户的画像（各 5 条）
+  - 创建 `frontend/src/ProfilePage.jsx`：用户选择器 + 按 8 类分组的画像列表 + 添加/编辑/删除
+  - App.jsx 新增"我的画像"主 Tab 导航
+- Files created/modified:
+  - backend/profile_store.py (created — 131 lines)
+  - backend/main.py (updated — import + init + seed + 5 endpoints)
+  - frontend/src/ProfilePage.jsx (created — 270 lines)
+  - frontend/src/ProfilePage.css (created — ~290 lines)
+  - frontend/src/App.jsx (updated — import + tab)
+  - task_plan.md (updated — Issue 10 marked complete)
+  - findings.md (updated)
+- Verification:
+  - ProfileStore import/init OK（8 类画像字段）
+  - main.py import OK（所有 8 个模块初始化正常）
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（31 modules, 416ms）
+  - Profile CRUD 冒烟测试：增/查/改/删 全部通过
+  - 3 个演示用户各 5 条种子画像正确写入
+  - 5/5 Acceptance Criteria met

@@ -18,6 +18,7 @@ from skill_generator import SkillGenerator  # noqa: E402
 from knowledge_retriever import KnowledgeRetriever  # noqa: E402
 from fact_lock import FactLockBuilder  # noqa: E402
 from risk_detector import RiskDetector  # noqa: E402
+from profile_store import ProfileStore  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -98,6 +99,29 @@ if llm_client is not None:
 # 初始化 RiskDetector（纯规则引擎，不依赖 LLMClient）
 risk_detector = RiskDetector()
 logger.info("RiskDetector 初始化成功")
+
+# 初始化 ProfileStore
+profile_store = ProfileStore()
+logger.info("ProfileStore 初始化成功，存储目录: %s", profile_store.storage_dir)
+
+# 种子演示画像（从 demo-data.json 写入，仅在文件不存在时首次写入）
+from pathlib import Path as _Path  # noqa: E402
+import json as _json  # noqa: E402
+_demo_data_path = _Path(__file__).resolve().parent.parent / "data" / "demo" / "demo-data.json"
+if _demo_data_path.exists():
+    _demo = _json.loads(_demo_data_path.read_text(encoding="utf-8"))
+    for _du in _demo.get("demo_users", []):
+        _uid = _du["id"]
+        if not profile_store.get_profiles(_uid):
+            _entries = [
+                {"profile_key": "basic_info", "profile_value": _du["profile"]["education_level"]},
+                {"profile_key": "knowledge_level", "profile_value": _du["profile"]["knowledge_base"]},
+                {"profile_key": "interest_preference", "profile_value": _du["profile"]["interest_preference"]},
+                {"profile_key": "expression_habit", "profile_value": _du["profile"]["expression_style"]},
+                {"profile_key": "stage_goal", "profile_value": _du["profile"]["current_goal"]},
+            ]
+            profile_store.seed_demo_profiles(_uid, _entries)
+            logger.info("种子画像已写入: user=%s count=%d", _uid, len(_entries))
 
 # 初始化 KnowledgeRetriever（ChromaDB 向量检索）
 knowledge_retriever = KnowledgeRetriever(knowledge_store=knowledge_store)
@@ -211,6 +235,42 @@ async def list_skills():
     if skill_generator is None:
         return {"skills": []}
     return {"skills": skill_generator.list_skills()}
+
+
+@app.get("/api/profile/{user_id}")
+async def get_profile(user_id: str):
+    """获取指定用户的全部画像条目。"""
+    return {
+        "user_id": user_id,
+        "profiles": profile_store.get_profiles(user_id),
+    }
+
+
+@app.post("/api/profile/{user_id}")
+async def create_profile(user_id: str, entry: dict):
+    """新增一条画像条目。"""
+    try:
+        profile = profile_store.create_profile(user_id, entry)
+        return {"status": "ok", "profile": profile}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.put("/api/profile/{user_id}/{profile_id}")
+async def update_profile(user_id: str, profile_id: str, updates: dict):
+    """更新指定画像条目。"""
+    profile = profile_store.update_profile(user_id, profile_id, updates)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="画像条目不存在")
+    return {"status": "ok", "profile": profile}
+
+
+@app.delete("/api/profile/{user_id}/{profile_id}")
+async def delete_profile(user_id: str, profile_id: str):
+    """删除指定画像条目。"""
+    if not profile_store.delete_profile(user_id, profile_id):
+        raise HTTPException(status_code=404, detail="画像条目不存在")
+    return {"status": "ok"}
 
 
 @app.post("/api/chat")

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "4919f3fe41cc",
+    "user_id": "demo_user_b",
+    "profile_key": "basic_info",
+    "profile_value": "大学低年级",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "1a4d3a3e6d14",
+    "user_id": "demo_user_b",
+    "profile_key": "knowledge_level",
+    "profile_value": "知道基本术语，但概念不稳",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "2b6091bdc38c",
+    "user_id": "demo_user_b",
+    "profile_key": "interest_preference",
+    "profile_value": "喜欢机制图和因果链",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "92c6fa4dcb36",
+    "user_id": "demo_user_b",
+    "profile_key": "expression_habit",
+    "profile_value": "可以接受专业术语，但需要解释",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  },
+  {
+    "id": "352b8939c2a4",
+    "user_id": "demo_user_b",
+    "profile_key": "stage_goal",
+    "profile_value": "准备课程汇报",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.791489+00:00",
+    "updated_at": "2026-07-10T02:18:31.791489+00:00"
+  }
+]

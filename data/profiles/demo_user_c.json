@@ -1,0 +1,62 @@
+[
+  {
+    "id": "ceac694bfa3b",
+    "user_id": "demo_user_c",
+    "profile_key": "basic_info",
+    "profile_value": "研究生",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.792489+00:00",
+    "updated_at": "2026-07-10T02:18:31.792489+00:00"
+  },
+  {
+    "id": "92945b908653",
+    "user_id": "demo_user_c",
+    "profile_key": "knowledge_level",
+    "profile_value": "具备专业基础",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.792489+00:00",
+    "updated_at": "2026-07-10T02:18:31.792489+00:00"
+  },
+  {
+    "id": "3af11755fc27",
+    "user_id": "demo_user_c",
+    "profile_key": "interest_preference",
+    "profile_value": "关注证据来源和研究边界",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.792489+00:00",
+    "updated_at": "2026-07-10T02:18:31.792489+00:00"
+  },
+  {
+    "id": "f41757900d78",
+    "user_id": "demo_user_c",
+    "profile_key": "expression_habit",
+    "profile_value": "严谨、克制、可用于组会",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.792489+00:00",
+    "updated_at": "2026-07-10T02:18:31.792489+00:00"
+  },
+  {
+    "id": "e5bc1d6700f3",
+    "user_id": "demo_user_c",
+    "profile_key": "stage_goal",
+    "profile_value": "准备科研展示",
+    "evidence": "演示种子数据",
+    "confidence": 0.9,
+    "authorization_status": "confirmed",
+    "scope": "learning_context",
+    "created_at": "2026-07-10T02:18:31.792489+00:00",
+    "updated_at": "2026-07-10T02:18:31.792489+00:00"
+  }
+]
