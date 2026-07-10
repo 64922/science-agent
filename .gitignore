@@ -16,6 +16,9 @@ data/knowledge/*.json
 # ChromaDB 向量索引（运行时生成）
 data/chromadb/
 
+# 画像审计日志（运行时生成）
+data/profiles/*_audit.jsonl
+
 # IDE / 个人配置
 .claude/
 笔记/
