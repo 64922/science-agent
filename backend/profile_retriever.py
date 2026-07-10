@@ -36,6 +36,7 @@ SCENARIO_CATEGORY_WEIGHTS = {
         "knowledge_level": 0.7,
         "interest_preference": 0.6,
         "expression_habit": 0.5,
+        "authorization_boundary": 0.5,
     },
 }
 
@@ -69,7 +70,6 @@ class ProfileRetriever:
         self,
         user_id: str,
         scenario_id: str,
-        user_query: str,
         authorized_profiles: list[dict],
     ) -> dict:
         """从已授权画像中召回 Top K 条。

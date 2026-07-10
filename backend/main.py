@@ -381,6 +381,12 @@ async def confirm_profile_candidates(user_id: str, req: ConfirmRequest):
     return {"status": "ok", "results": results}
 
 
+@app.get("/api/profile/categories")
+async def get_profile_categories():
+    """返回 8 类画像字段定义，供前端使用。"""
+    return {"categories": profile_store.get_categories()}
+
+
 @app.post("/api/profile/{user_id}/preference/{profile_id}")
 async def adjust_preference(user_id: str, profile_id: str, req: PreferenceFeedback):
     """调整画像偏好权重（用户反馈"不喜欢这类例子"时降低权重）。"""
@@ -410,7 +416,7 @@ async def chat(req: ChatRequest):
         # 画像召回（Issue 13）
         authorized_profiles, profile_skipped = profile_store.get_authorized_profiles(req.user_id)
         profile_retrieval = profile_retriever.retrieve(
-            req.user_id, req.scenario_id, req.message, authorized_profiles,
+            req.user_id, req.scenario_id, authorized_profiles,
         )
         selected_profiles = profile_retrieval.get("selected_profiles", [])
         if selected_profiles:
