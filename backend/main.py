@@ -22,6 +22,7 @@ from profile_store import ProfileStore  # noqa: E402
 from profile_extractor import ProfileExtractor  # noqa: E402
 from profile_retriever import ProfileRetriever  # noqa: E402
 from humanization_pipeline import HumanizationPipeline  # noqa: E402
+from feedback_router import FeedbackRouter, FEEDBACK_LABELS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -31,6 +32,16 @@ class ChatRequest(BaseModel):
     user_id: str
     message: str
     scenario_id: str = "popular_science"
+
+
+class FeedbackRequest(BaseModel):
+    user_id: str
+    message: str
+    current_reply: str
+    scenario_id: str
+    feedback_type: str
+    fact_lock: dict | None = None
+    sources: list[dict] = []
 
 
 MAX_EVIDENCE_CHARS = 3000
@@ -108,6 +119,12 @@ humanization_pipeline = None
 if llm_client is not None:
     humanization_pipeline = HumanizationPipeline(llm_client)
     logger.info("HumanizationPipeline 初始化成功")
+
+# 初始化 FeedbackRouter（依赖 LLMClient）
+feedback_router = None
+if llm_client is not None:
+    feedback_router = FeedbackRouter(llm_client)
+    logger.info("FeedbackRouter 初始化成功")
 
 # 初始化 ProfileStore
 profile_store = ProfileStore()
@@ -254,6 +271,103 @@ async def list_skills():
     if skill_generator is None:
         return {"skills": []}
     return {"skills": skill_generator.list_skills()}
+
+
+@app.post("/api/feedback")
+async def submit_feedback(req: FeedbackRequest):
+    """接收用户反馈，触发回答迭代。"""
+    if llm_client is None:
+        raise HTTPException(
+            status_code=503,
+            detail=llm_init_error or "LLM 服务未就绪，请检查 API Key 配置",
+        )
+    if feedback_router is None:
+        raise HTTPException(status_code=503, detail="反馈路由未就绪")
+
+    valid_types = set(FEEDBACK_LABELS.keys())
+    if req.feedback_type not in valid_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持的反馈类型「{req.feedback_type}」，支持: {', '.join(sorted(valid_types))}",
+        )
+
+    try:
+        scenario = scenario_router.get_scenario_config(req.scenario_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    scenario_name = scenario["name"]
+
+    try:
+        system_prompt = scenario_router.build_system_prompt(
+            req.scenario_id, req.user_id
+        )
+        authorized_profiles, profile_skipped = profile_store.get_authorized_profiles(req.user_id)
+        profile_retrieval = profile_retriever.retrieve(
+            req.user_id, req.scenario_id, authorized_profiles,
+        )
+        selected_profiles = profile_retrieval.get("selected_profiles", [])
+        if selected_profiles:
+            system_prompt = profile_retriever.build_profile_context(selected_profiles) + "\n" + system_prompt
+
+        sources = req.sources if req.sources else knowledge_retriever.retrieve(req.message, top_k=5)
+        fact_lock = req.fact_lock or EMPTY_FACT_LOCK
+
+        if req.feedback_type == "fact_suspect" and sources and fact_lock_builder is not None:
+            fact_lock = fact_lock_builder.build(req.current_reply, sources)
+            system_prompt = fact_lock_builder.inject_constraint(system_prompt, fact_lock)
+
+        if sources:
+            system_prompt = _inject_evidence(system_prompt, sources)
+
+        result = feedback_router.route(
+            feedback_type=req.feedback_type,
+            message=req.message,
+            current_reply=req.current_reply,
+            scenario_id=req.scenario_id,
+            scenario_name=scenario_name,
+            fact_lock=fact_lock,
+            sources=sources,
+            system_prompt=system_prompt,
+        )
+
+        new_reply = result["reply"]
+        risk_report = risk_detector.analyze(new_reply)
+        humanization_report = None
+        if humanization_pipeline is not None:
+            humanization_report = humanization_pipeline.rewrite(
+                new_reply, req.scenario_id, scenario_name, fact_lock
+            )
+            new_reply = humanization_report["rewritten_text"]
+
+        profile_correction = None
+        if req.feedback_type == "profile_wrong" and profile_extractor is not None:
+            candidates = profile_extractor.extract(req.message)
+            if candidates:
+                profile_correction = {
+                    "message": "根据你的反馈，系统重新评估了画像，请确认以下修正建议。",
+                    "candidates": candidates,
+                }
+
+        logger.info(
+            "反馈处理完成 | user=%s type=%s iteration=%d path=%s",
+            req.user_id, req.feedback_type, result["iteration_number"], result["processing_path"],
+        )
+    except APIError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    return {
+        "reply": new_reply,
+        "feedback_type": req.feedback_type,
+        "feedback_label": result["feedback_label"],
+        "iteration_number": result["iteration_number"],
+        "previous_reply": result["previous_reply"],
+        "processing_path": result["processing_path"],
+        "llm_error": result.get("llm_error", False),
+        "risk_report": risk_report,
+        "humanization_report": humanization_report,
+        "profile_correction": profile_correction,
+    }
 
 
 @app.get("/api/profile/{user_id}")

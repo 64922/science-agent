@@ -302,6 +302,17 @@ function HumanizationPanel({ report }) {
   );
 }
 
+const FEEDBACK_TYPES = [
+  { id: "too_hard", label: "太难了", icon: "😫" },
+  { id: "too_shallow", label: "太浅了", icon: "📚" },
+  { id: "not_natural", label: "不够自然", icon: "🤖" },
+  { id: "too_ai", label: "太像 AI", icon: "🦾" },
+  { id: "fact_suspect", label: "事实可疑", icon: "🔍" },
+  { id: "bad_examples", label: "例子不喜欢", icon: "💡" },
+  { id: "bad_tone", label: "语气不合适", icon: "🗣️" },
+  { id: "profile_wrong", label: "画像不对", icon: "👤" },
+];
+
 function App() {
   const [activeTab, setActiveTab] = useState("chat");
   const [userId, setUserId] = useState("demo_user_a");
@@ -319,6 +330,7 @@ function App() {
   const [profileSkipLog, setProfileSkipLog] = useState([]);
   const [selectedProfiles, setSelectedProfiles] = useState([]);
   const [humanizationReport, setHumanizationReport] = useState(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -373,6 +385,8 @@ function App() {
           role: "assistant",
           content: data.reply,
           scenarioName: data.scenario_name,
+          userMessage: text,
+          iterations: [],
         },
       ]);
       setSources(data.sources || []);
@@ -416,6 +430,72 @@ function App() {
 
   const handleDismissCandidates = () => {
     setProfileCandidates(null);
+  };
+
+  const handleFeedback = async (msgId, feedbackType, userMessage, currentReply) => {
+    if (feedbackLoading) return;
+    setFeedbackLoading(msgId);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          message: userMessage,
+          current_reply: currentReply,
+          scenario_id: selectedScenario,
+          feedback_type: feedbackType,
+          fact_lock: factLock,
+          sources: sources,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `反馈处理失败 (${res.status})`);
+      }
+
+      const data = await res.json();
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id === msgId) {
+            return {
+              ...msg,
+              content: data.reply,
+              iterations: [
+                ...(msg.iterations || []),
+                {
+                  feedback_type: feedbackType,
+                  feedback_label: data.feedback_label,
+                  iteration_number: data.iteration_number,
+                  previous_reply: data.previous_reply,
+                },
+              ],
+              feedbackGiven: feedbackType,
+              llmError: data.llm_error || false,
+              humanizationReport: data.humanization_report,
+              riskReport: data.risk_report,
+            };
+          }
+          return msg;
+        })
+      );
+
+      if (data.llm_error) {
+        setError("模型调用失败，已保留上一版回答。请稍后重试。");
+      }
+      if (data.profile_correction) {
+        setProfileCandidates(data.profile_correction.candidates);
+      }
+      setRiskReport(data.risk_report);
+      setHumanizationReport(data.humanization_report);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setFeedbackLoading(null);
+    }
   };
 
   const currentLabel = useMemo(
@@ -486,7 +566,10 @@ function App() {
           <div className="chat-container">
             <div className="chat-main">
               <main className="chat-area">
-                {messages.map((msg) => (
+                {messages.map((msg) => {
+                  const isFeedbackLoading = feedbackLoading === msg.id;
+                  const iterations = msg.iterations || [];
+                  return (
                   <div key={msg.id} className={`message ${msg.role}`}>
                     <div className="message-role">
                       {msg.role === "user"
@@ -494,10 +577,47 @@ function App() {
                         : msg.scenarioName
                           ? `知己 · ${msg.scenarioName}`
                           : "知己"}
+                      {iterations.length > 0 && (
+                        <span className="iteration-badge">
+                          已迭代 {iterations.length} 次
+                        </span>
+                      )}
                     </div>
+                    {isFeedbackLoading && (
+                      <div className="feedback-loading-banner">
+                        正在根据「{FEEDBACK_TYPES.find((f) => f.id === feedbackLoading)?.label || feedbackLoading}」反馈优化回答...
+                      </div>
+                    )}
+                    {msg.llmError && (
+                      <div className="feedback-error-banner">
+                        模型调用失败，以下为上一版回答。
+                      </div>
+                    )}
                     <div className="message-content">{msg.content}</div>
+                    {msg.role === "assistant" && msg.userMessage && (
+                      <div className="feedback-bar">
+                        {FEEDBACK_TYPES.map((fb) => {
+                          const isActive = msg.feedbackGiven === fb.id;
+                          return (
+                            <button
+                              key={fb.id}
+                              className={"feedback-btn" + (isActive ? " feedback-btn-active" : "")}
+                              onClick={() =>
+                                handleFeedback(msg.id, fb.id, msg.userMessage, msg.content)
+                              }
+                              disabled={!!feedbackLoading}
+                              title={fb.label}
+                            >
+                              <span className="feedback-btn-icon">{fb.icon}</span>
+                              <span className="feedback-btn-label">{fb.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
 
                 {profileCandidates && (
                   <ProfileCandidateCard

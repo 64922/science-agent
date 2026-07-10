@@ -441,3 +441,29 @@
   - `vite build` → 构建成功（32 modules, 422ms）
   - 规则检测冒烟测试：模板腔 4/4、连接词堆叠 1/1、干净文本 0/0、数字+术语锁定正确
   - 5/5 Acceptance Criteria met
+
+### Issue 15: 反馈按钮与回答迭代
+- **Status:** complete
+- **Started:** 2026-07-10
+- Actions taken:
+  - 创建 `backend/feedback_router.py`：FeedbackRouter 类，8 种反馈类型对应 4 条处理路径
+  - 4 条处理路径：rewrite（too_hard/too_shallow/bad_examples/bad_tone）、rehumanize（not_natural/too_ai）、fact_recheck（fact_suspect）、profile_correction（profile_wrong）
+  - 每条反馈类型有专用中文指令（FEEDBACK_INSTRUCTIONS），注入系统提示词引导 LLM 重新生成
+  - `fact_suspect` 路径在端点层重新调用 fact_lock_builder 复查事实
+  - `profile_wrong` 路径在端点层调用 profile_extractor 生成画像修正候选
+  - `/api/feedback` 端点：接收反馈请求 → 重建系统提示词 → 路由处理 → 风险检测 → 人味化改写 → 返回新回答 + 迭代记录
+  - 前端 8 个反馈按钮（带图标）：太难了/太浅了/不够自然/太像 AI/事实可疑/例子不喜欢/语气不合适/画像不对
+  - 前端消息对象扩展：userMessage（反馈溯源）、iterations（版本历史）、feedbackGiven（当前反馈类型）
+  - 迭代次数徽章显示在消息角色旁（"已迭代 N 次"），反馈处理中显示加载横幅
+  - 已点击反馈按钮高亮为深蓝色 active 状态
+- Files created/modified:
+  - backend/feedback_router.py (created — 137 lines)
+  - backend/main.py (updated — FeedbackRequest model + FeedbackRouter init + /api/feedback endpoint)
+  - frontend/src/App.jsx (updated — FEEDBACK_TYPES + feedbackLoading state + handleFeedback + feedback buttons UI)
+  - frontend/src/App.css (updated — feedback-bar/feedback-btn/iteration-badge/feedback-loading-banner styles)
+- Verification:
+  - FeedbackRouter import OK, 8 feedback types + 4 processing paths verified
+  - main.py import OK (all 12 modules init including FeedbackRouter)
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（411ms）
+  - 5/5 Acceptance Criteria met

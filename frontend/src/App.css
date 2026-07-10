@@ -977,3 +977,93 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Feedback Bar */
+.feedback-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 0;
+}
+
+.feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fafafa;
+  font-size: 0.7rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.feedback-btn:hover:not(:disabled) {
+  border-color: #0f3460;
+  color: #0f3460;
+  background: #f0f4ff;
+}
+
+.feedback-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.feedback-btn-active {
+  background: #0f3460;
+  color: #fff;
+  border-color: #0f3460;
+}
+
+.feedback-btn-active:hover:not(:disabled) {
+  background: #16213e;
+  color: #fff;
+}
+
+.feedback-btn-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.feedback-btn-label {
+  font-size: 0.68rem;
+}
+
+/* Iteration Badge */
+.iteration-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 0.65rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* Feedback Loading Banner */
+.feedback-loading-banner {
+  font-size: 0.75rem;
+  color: #7c3aed;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin-bottom: 6px;
+}
+
+.feedback-error-banner {
+  font-size: 0.75rem;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin-bottom: 6px;
+}
