@@ -23,6 +23,7 @@ from profile_extractor import ProfileExtractor  # noqa: E402
 from profile_retriever import ProfileRetriever  # noqa: E402
 from humanization_pipeline import HumanizationPipeline  # noqa: E402
 from feedback_router import FeedbackRouter, FEEDBACK_LABELS  # noqa: E402
+from iteration_store import IterationStore  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -120,10 +121,14 @@ if llm_client is not None:
     humanization_pipeline = HumanizationPipeline(llm_client)
     logger.info("HumanizationPipeline 初始化成功")
 
-# 初始化 FeedbackRouter（依赖 LLMClient）
+# 初始化 IterationStore（持久化迭代日志）
+iteration_store = IterationStore()
+logger.info("IterationStore 初始化成功，存储目录: %s", iteration_store.storage_dir)
+
+# 初始化 FeedbackRouter（依赖 LLMClient + IterationStore）
 feedback_router = None
 if llm_client is not None:
-    feedback_router = FeedbackRouter(llm_client)
+    feedback_router = FeedbackRouter(llm_client, iteration_store=iteration_store)
     logger.info("FeedbackRouter 初始化成功")
 
 # 初始化 ProfileStore
@@ -363,11 +368,33 @@ async def submit_feedback(req: FeedbackRequest):
         "iteration_number": result["iteration_number"],
         "previous_reply": result["previous_reply"],
         "processing_path": result["processing_path"],
+        "turn_key": result["turn_key"],
+        "profile_updated": profile_correction is not None,
         "llm_error": result.get("llm_error", False),
         "risk_report": risk_report,
         "humanization_report": humanization_report,
         "profile_correction": profile_correction,
     }
+
+
+@app.get("/api/iterations/{turn_key}")
+async def get_iterations(turn_key: str):
+    """获取指定对话轮次的所有迭代记录。"""
+    records = iteration_store.get(turn_key)
+    return {
+        "turn_key": turn_key,
+        "iterations": records,
+        "total": len(records),
+    }
+
+
+@app.get("/api/iterations/demo/{demo_id}")
+async def get_demo_iteration(demo_id: str):
+    """获取演示迭代案例（用于演示模式直接打开）。"""
+    demo = iteration_store.get_demo(demo_id)
+    if demo is None:
+        raise HTTPException(status_code=404, detail=f"演示案例「{demo_id}」不存在")
+    return {"demo": demo}
 
 
 @app.get("/api/profile/{user_id}")

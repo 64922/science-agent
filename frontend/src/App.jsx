@@ -3,6 +3,13 @@ import KnowledgePage from "./KnowledgePage";
 import ProfilePage from "./ProfilePage";
 import { CATEGORY_LABELS, DEMO_USERS } from "./constants";
 
+const CHANGE_TYPE_LABELS = {
+  rewrite: "重写回答",
+  rehumanize: "强人味化",
+  fact_recheck: "事实复查",
+  profile_correction: "画像修正",
+};
+
 function getRiskShortLabel(signal) {
   if (signal.startsWith("绝对化")) return "绝对化";
   if (signal.startsWith("具体数字") || signal.startsWith("具体百分比")) return "数字";
@@ -302,6 +309,89 @@ function HumanizationPanel({ report }) {
   );
 }
 
+function IterationHistoryPanel({ iterations, currentReply, profileUpdated }) {
+  const [expanded, setExpanded] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+
+  if (!iterations || iterations.length === 0) return null;
+
+  const firstReply = iterations[0]?.previous_reply || "";
+  const latestReply = currentReply || "";
+
+  return (
+    <div className="iteration-history">
+      <div className="iteration-history-header" onClick={() => setExpanded(!expanded)}>
+        <span className="iteration-history-toggle">{expanded ? "▼" : "▶"}</span>
+        <span className="iteration-history-title">
+          迭代历史（共 {iterations.length} 次）
+        </span>
+        {profileUpdated && (
+          <span className="profile-updated-badge">画像已更新</span>
+        )}
+        {!expanded && (
+          <span className="iteration-history-preview">
+            {iterations.map((it) => it.feedback_label).join(" → ")}
+          </span>
+        )}
+      </div>
+
+      {expanded && (
+        <div className="iteration-history-body">
+          <div className="iteration-compare-bar">
+            <button
+              className={"iteration-compare-btn" + (compareMode ? " active" : "")}
+              onClick={() => setCompareMode(!compareMode)}
+            >
+              {compareMode ? "关闭对比" : "对比首版与最新版"}
+            </button>
+          </div>
+
+          {compareMode && (
+            <div className="iteration-compare-view">
+              <div className="iteration-compare-col">
+                <div className="iteration-compare-col-header">首版回答</div>
+                <div className="iteration-compare-col-content">{firstReply}</div>
+              </div>
+              <div className="iteration-compare-divider" />
+              <div className="iteration-compare-col">
+                <div className="iteration-compare-col-header">
+                  最新版（第 {iterations.length} 次迭代后）
+                </div>
+                <div className="iteration-compare-col-content">{latestReply}</div>
+              </div>
+            </div>
+          )}
+
+          <ul className="iteration-list">
+            {iterations.map((it, i) => (
+              <li key={i} className="iteration-item">
+                <div className="iteration-item-header">
+                  <span className="iteration-number">#{it.iteration_number}</span>
+                  <span className="iteration-feedback-label">{it.feedback_label}</span>
+                  <span className="iteration-change-type">
+                    {CHANGE_TYPE_LABELS[it.change_type] || it.change_type}
+                  </span>
+                </div>
+                <div className="iteration-change-detail">
+                  <div className="iteration-change-block">
+                    <div className="iteration-change-label">变更前</div>
+                    <div className="iteration-change-text">{it.previous_reply}</div>
+                  </div>
+                  <div className="iteration-change-arrow">↓ 反馈后 ↓</div>
+                  <div className="iteration-change-block">
+                    <div className="iteration-change-label">变更后</div>
+                    <div className="iteration-change-text">{it.after_text || latestReply}</div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const FEEDBACK_TYPES = [
   { id: "too_hard", label: "太难了", icon: "😫" },
   { id: "too_shallow", label: "太浅了", icon: "📚" },
@@ -344,6 +434,56 @@ function App() {
     fetch("/api/scenarios")
       .then((res) => res.json())
       .then((data) => setScenarios(data.scenarios || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const demoId = params.get("demoIteration");
+    if (!demoId) return;
+    fetch(`/api/iterations/demo/${encodeURIComponent(demoId)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("演示案例加载失败");
+        return res.json();
+      })
+      .then((data) => {
+        const demo = data.demo;
+        if (!demo) return;
+        setSelectedScenario(demo.scenario_id || "popular_science");
+        setUserId(demo.user_id || "demo_user_a");
+        const demoIterations = (demo.iterations || []).map((it) => ({
+          feedback_type: it.feedback_type,
+          feedback_label: it.feedback_label,
+          iteration_number: it.iteration_number,
+          previous_reply: it.before_text,
+          after_text: it.after_text,
+          change_type: it.change_type,
+        }));
+        const finalReply =
+          demoIterations.length > 0
+            ? demoIterations[demoIterations.length - 1].after_text
+            : demo.first_reply;
+        setMessages([
+          {
+            id: Date.now(),
+            role: "user",
+            content: demo.user_message,
+          },
+          {
+            id: Date.now() + 1,
+            role: "assistant",
+            content: finalReply,
+            scenarioName: demo.scenario_name,
+            userMessage: demo.user_message,
+            turnKey: null,
+            profileUpdated: demo.profile_updated || false,
+            iterations: demoIterations,
+            feedbackGiven: demoIterations.length > 0
+              ? demoIterations[demoIterations.length - 1].feedback_type
+              : null,
+          },
+        ]);
+      })
       .catch(() => {});
   }, []);
 
@@ -464,6 +604,8 @@ function App() {
             return {
               ...msg,
               content: data.reply,
+              turnKey: data.turn_key || msg.turnKey,
+              profileUpdated: data.profile_updated || msg.profileUpdated,
               iterations: [
                 ...(msg.iterations || []),
                 {
@@ -471,6 +613,8 @@ function App() {
                   feedback_label: data.feedback_label,
                   iteration_number: data.iteration_number,
                   previous_reply: data.previous_reply,
+                  after_text: data.reply,
+                  change_type: data.processing_path,
                 },
               ],
               feedbackGiven: feedbackType,
@@ -561,6 +705,17 @@ function App() {
                 ))}
               </select>
             </div>
+            <button
+              className="demo-trigger-btn"
+              onClick={() => {
+                const url = new URL(window.location);
+                url.searchParams.set("demoIteration", "immune_basic");
+                window.location.href = url.toString();
+              }}
+              title="打开迭代日志演示案例"
+            >
+              演示：免疫迭代
+            </button>
           </nav>
 
           <div className="chat-container">
@@ -614,6 +769,13 @@ function App() {
                           );
                         })}
                       </div>
+                    )}
+                    {msg.role === "assistant" && (
+                      <IterationHistoryPanel
+                        iterations={msg.iterations}
+                        currentReply={msg.content}
+                        profileUpdated={msg.profileUpdated}
+                      />
                     )}
                   </div>
                   );

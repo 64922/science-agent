@@ -4,7 +4,7 @@
 构建一个可演示的科教智能体 MVP，跑通"画像闭环 + 事实校验 + 人味化表达 + 多模态展示 + 评估看板"完整链路，主演示主题为"免疫系统如何识别病毒"。
 
 ## Current Phase
-Phase 4
+Phase 5
 
 ## Phases
 
@@ -70,7 +70,7 @@ Phase 4
   - 前端显示"本轮调用画像"
 - **Status:** complete
 
-### Phase 4: 人味化与反馈闭环 (Issues 14-16)
+### Phase 4: 人味化与反馈闭环 (Issues 14-16) — **Status: complete**
 - [x] **Issue 14**: 人味化表达检测与改写
   - HumanizationPipeline：检测模板腔、过度排比、空泛总结、机翻感长句
   - 支持课堂老师、科普作者、科研汇报三种风格
@@ -80,10 +80,11 @@ Phase 4
   - 8 个反馈按钮（太难、太浅、不够自然、太像 AI、事实可疑、例子不喜欢、语气不合适、画像不对）
   - FeedbackRouter 根据不同反馈触发不同处理路径（重写/强人味化/事实复查/画像修正）
   - 前端迭代次数标记，后端保存迭代前后文本
-- [ ] **Issue 16**: 迭代日志与版本对比展示
-  - 回答版本历史 iteration_number
-  - 前端对比第一版和最终版
-- **Status:** in_progress
+- [x] **Issue 16**: 迭代日志与版本对比展示
+  - 回答版本历史 iteration_number，持久化迭代日志（IterationStore）
+  - 前端 IterationHistoryPanel：版本列表、首版/最新版对比视图
+  - 画像更新标记 + 演示模式（?demoIteration=immune_basic）
+- **Status:** complete
 
 ### Phase 5: 长期学习与多模态 (Issues 17-19)
 - [ ] **Issue 17**: 长期学习记录与下一课建议

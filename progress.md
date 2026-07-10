@@ -467,3 +467,36 @@
   - `pytest test_scenario_router.py -v` → 10 passed（无回归）
   - `vite build` → 构建成功（411ms）
   - 5/5 Acceptance Criteria met
+
+### Issue 16: 迭代日志与版本对比展示
+- **Status:** complete
+- **Started:** 2026-07-10
+- Actions taken:
+  - 创建 `backend/iteration_store.py`：IterationStore 类，JSON 文件持久化迭代日志到 `data/iterations/`
+  - FeedbackRouter 接入持久化存储，每条迭代记录包含 turn_key / before_text / after_text / change_type / profile_updated
+  - `/api/feedback` 响应新增 `turn_key` 和 `profile_updated` 字段
+  - 新增 `GET /api/iterations/{turn_key}` 端点：获取指定轮次全部迭代记录
+  - 新增 `GET /api/iterations/demo/{demo_id}` 端点：获取演示迭代案例
+  - 创建 `data/demo/demo-iterations.json`：免疫系统识别病毒 × 2 次反馈迭代演示案例
+  - App.jsx: 新增 `IterationHistoryPanel` 组件——可折叠迭代历史、版本列表、首版/最新版并排对比视图
+  - App.jsx: 新增 demo 模式 `?demoIteration=immune_basic` URL 参数自动加载演示案例
+  - App.jsx: 场景栏新增"演示：免疫迭代"按钮
+  - App.jsx: `handleFeedback` 存储 turnKey / after_text / change_type / profileUpdated
+  - App.jsx: 画像已更新时显示"画像已更新"黄色徽章
+  - App.css: 迭代历史面板/对比视图/版本列表/演示按钮完整样式（~200 lines）
+- Files created/modified:
+  - backend/iteration_store.py (created — 59 lines)
+  - backend/feedback_router.py (updated — 持久化存储接入 + turn_key/profile_updated 返回)
+  - backend/main.py (updated — IterationStore init + 2 GET endpoints + /api/feedback 响应扩展)
+  - data/demo/demo-iterations.json (created — 1 演示案例, 2 iterations)
+  - frontend/src/App.jsx (updated — IterationHistoryPanel + demo mode + enhanced handleFeedback)
+  - frontend/src/App.css (updated — iteration history/comparison/demo styles, ~200 lines)
+  - task_plan.md (updated — Issue 16 marked complete, Phase 4 → complete, Current Phase → 5)
+  - progress.md (updated — Issue 16 entry)
+- Verification:
+  - IterationStore smoke test: save/get/demo 全部通过
+  - main.py import OK（所有 13 个模块初始化正常，30 routes）
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（32 modules, 451ms）
+  - 5/5 Acceptance Criteria met
+  - **Phase 4 全部完成（Issues 14-16）**

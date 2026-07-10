@@ -74,9 +74,10 @@ PROFILE_PATH = {"profile_wrong"}
 class FeedbackRouter:
     """根据反馈类型路由到不同的处理路径并生成新回答。"""
 
-    def __init__(self, llm_client):
+    def __init__(self, llm_client, iteration_store=None):
         self.llm = llm_client
         self.iteration_store: dict[str, list[dict]] = {}
+        self.persistence = iteration_store  # IterationStore 实例，可选
 
     def route(
         self,
@@ -135,17 +136,24 @@ class FeedbackRouter:
             llm_error = True
 
         iteration_record = {
+            "turn_key": turn_key,
             "iteration_number": iteration_number,
             "feedback_type": feedback_type,
             "feedback_label": label,
-            "previous_reply": current_reply,
-            "new_reply": new_reply,
+            "change_type": self._get_path(feedback_type),
+            "before_text": current_reply,
+            "after_text": new_reply,
         }
 
-        # 存储迭代记录
         if turn_key not in self.iteration_store:
             self.iteration_store[turn_key] = []
         self.iteration_store[turn_key].append(iteration_record)
+
+        if self.persistence is not None:
+            try:
+                self.persistence.save(turn_key, iteration_record)
+            except Exception:
+                logger.warning("持久化迭代记录失败", exc_info=True)
 
         logger.info(
             "反馈迭代完成 | type=%s iteration=%d prev_len=%d new_len=%d llm_error=%s",
@@ -159,6 +167,7 @@ class FeedbackRouter:
             "iteration_number": iteration_number,
             "previous_reply": current_reply,
             "processing_path": self._get_path(feedback_type),
+            "turn_key": turn_key,
             "llm_error": llm_error,
         }
 
