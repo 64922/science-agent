@@ -433,6 +433,28 @@ body {
   margin-top: 2px;
 }
 
+/* Profile Skip Log */
+.skip-log-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skip-log-item {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #ef4444;
+  background: #fef2f2;
+}
+
+.skip-log-item .fl-tag {
+  background: #fecaca;
+  color: #991b1b;
+}
+
 /* Risk Detection Panel */
 .risk-summary {
   display: flex;

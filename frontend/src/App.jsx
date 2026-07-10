@@ -225,6 +225,7 @@ function App() {
   const [factLock, setFactLock] = useState(null);
   const [riskReport, setRiskReport] = useState(null);
   const [profileCandidates, setProfileCandidates] = useState(null);
+  const [profileSkipLog, setProfileSkipLog] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -289,6 +290,7 @@ function App() {
           ? data.profile_candidates
           : null
       );
+      setProfileSkipLog(data.profile_skip_log || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -466,6 +468,21 @@ function App() {
 
               {messages.length > 0 && (
                 <FactLockPanel factLock={factLock} />
+              )}
+
+              {profileSkipLog.length > 0 && (
+                <>
+                  <h3>画像调用跳过记录</h3>
+                  <ul className="skip-log-list">
+                    {profileSkipLog.map((s, i) => (
+                      <li key={i} className="skip-log-item">
+                        <span className="fl-tag">未调用</span>
+                        {s.profile_value}
+                        <span className="fl-reason">{s.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
 
               {messages.length > 0 && (

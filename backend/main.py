@@ -280,6 +280,51 @@ async def delete_profile(user_id: str, profile_id: str):
     return {"status": "ok"}
 
 
+@app.post("/api/profile/{user_id}/revoke/{profile_id}")
+async def revoke_profile(user_id: str, profile_id: str):
+    """撤回单条画像授权。"""
+    profile = profile_store.revoke_profile(user_id, profile_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="画像条目不存在")
+    return {"status": "ok", "profile": profile}
+
+
+@app.post("/api/profile/{user_id}/revoke-category/{category_key}")
+async def revoke_category(user_id: str, category_key: str):
+    """撤回某类画像的全部授权。"""
+    try:
+        count = profile_store.revoke_category(user_id, category_key)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"status": "ok", "revoked_count": count}
+
+
+@app.post("/api/profile/{user_id}/memory-pause")
+async def pause_memory(user_id: str):
+    """暂停全部记忆。"""
+    state = profile_store.set_memory_pause(user_id, True)
+    return {"status": "ok", "memory_state": state}
+
+
+@app.post("/api/profile/{user_id}/memory-resume")
+async def resume_memory(user_id: str):
+    """恢复全部记忆。"""
+    state = profile_store.set_memory_pause(user_id, False)
+    return {"status": "ok", "memory_state": state}
+
+
+@app.get("/api/profile/{user_id}/memory-status")
+async def memory_status(user_id: str):
+    """获取记忆暂停状态。"""
+    return {"status": "ok", "memory_state": profile_store.get_memory_status(user_id)}
+
+
+@app.get("/api/profile/{user_id}/audit-log")
+async def audit_log(user_id: str):
+    """获取授权变更操作记录。"""
+    return {"status": "ok", "entries": profile_store.get_audit_log(user_id)}
+
+
 class ConfirmRequest(BaseModel):
     candidates: list[dict]
     action: str  # "remember" | "session_only" | "deny"
@@ -356,14 +401,24 @@ async def chat(req: ChatRequest):
         profile_candidates = []
         if profile_extractor is not None:
             profile_candidates = profile_extractor.extract(req.message)
+        _, profile_skipped = profile_store.get_authorized_profiles(req.user_id)
+        profile_skip_log = []
+        for s in profile_skipped:
+            p = s["profile"]
+            profile_skip_log.append({
+                "profile_key": p["profile_key"],
+                "profile_value": p["profile_value"],
+                "reason": f"该画像因未授权未调用（{s['reason']}）",
+            })
         logger.info(
-            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d risks=%d candidates=%d reply_len=%d",
+            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d risks=%d candidates=%d skipped=%d reply_len=%d",
             req.user_id, req.scenario_id, len(sources),
             len(fact_lock.get("facts", {}).get("confirmed", [])),
             len(fact_lock.get("facts", {}).get("uncertain", [])),
             len(fact_lock.get("facts", {}).get("forbidden", [])),
             risk_report["risk_count"],
             len(profile_candidates),
+            len(profile_skip_log),
             len(reply),
         )
     except APIError as exc:
@@ -378,4 +433,5 @@ async def chat(req: ChatRequest):
         "fact_lock": fact_lock,
         "risk_report": risk_report,
         "profile_candidates": profile_candidates,
+        "profile_skip_log": profile_skip_log,
     }

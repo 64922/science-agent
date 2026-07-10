@@ -2,6 +2,20 @@ import { useState, useEffect } from "react";
 import "./ProfilePage.css";
 import { CATEGORY_LABELS, CATEGORY_ORDER, AUTH_LABELS, DEMO_USERS } from "./constants";
 
+const ACTION_LABELS = {
+  revoke_single: "撤回单条",
+  revoke_category: "撤回类别",
+  pause_memory: "暂停记忆",
+  resume_memory: "恢复记忆",
+};
+
+const ACTION_TARGET = {
+  revoke_single: (t) => `画像 #${t}`,
+  revoke_category: (t) => CATEGORY_LABELS[t] || t,
+  pause_memory: () => "全部记忆",
+  resume_memory: () => "全部记忆",
+};
+
 function ProfilePage() {
   const [userId, setUserId] = useState("demo_user_a");
   const [profiles, setProfiles] = useState([]);
@@ -9,6 +23,9 @@ function ProfilePage() {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [adding, setAdding] = useState(false);
+  const [memoryPaused, setMemoryPaused] = useState(false);
+  const [auditLog, setAuditLog] = useState([]);
+  const [showAuditLog, setShowAuditLog] = useState(false);
   const [newForm, setNewForm] = useState({
     profile_key: "basic_info",
     profile_value: "",
@@ -26,8 +43,20 @@ function ProfilePage() {
       .catch(() => setError("获取画像失败"));
   };
 
+  const refreshAuditLog = () => {
+    fetch(`/api/profile/${userId}/audit-log`)
+      .then((res) => res.json())
+      .then((data) => setAuditLog(data.entries || []))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     fetchProfiles(userId);
+    fetch(`/api/profile/${userId}/memory-status`)
+      .then((res) => res.json())
+      .then((data) => setMemoryPaused(data.memory_state?.paused || false))
+      .catch(() => {});
+    refreshAuditLog();
   }, [userId]);
 
   const handleDelete = async (profileId) => {
@@ -102,6 +131,45 @@ function ProfilePage() {
     }
   };
 
+  const handleRevoke = async (profileId) => {
+    if (!window.confirm("确定要撤回这条画像的授权吗？")) return;
+    try {
+      const res = await fetch(`/api/profile/${userId}/revoke/${profileId}`, { method: "POST" });
+      if (!res.ok) throw new Error("撤回失败");
+      fetchProfiles(userId);
+      refreshAuditLog();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleRevokeCategory = async (categoryKey) => {
+    if (!window.confirm(`确定要撤回「${CATEGORY_LABELS[categoryKey]}」类别的全部授权吗？`)) return;
+    try {
+      const res = await fetch(`/api/profile/${userId}/revoke-category/${categoryKey}`, { method: "POST" });
+      if (!res.ok) throw new Error("批量撤回失败");
+      fetchProfiles(userId);
+      refreshAuditLog();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleToggleMemory = async () => {
+    const endpoint = memoryPaused ? "memory-resume" : "memory-pause";
+    const action = memoryPaused ? "恢复" : "暂停";
+    if (!window.confirm(`确定要${action}全部记忆吗？`)) return;
+    try {
+      const res = await fetch(`/api/profile/${userId}/${endpoint}`, { method: "POST" });
+      if (!res.ok) throw new Error(`${action}失败`);
+      const data = await res.json();
+      setMemoryPaused(data.memory_state?.paused || false);
+      refreshAuditLog();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const groupedProfiles = CATEGORY_ORDER.map((key) => ({
     key,
     label: CATEGORY_LABELS[key],
@@ -126,6 +194,12 @@ function ProfilePage() {
         </select>
         <button className="pp-add-btn" onClick={() => setAdding(true)} disabled={adding}>
           添加画像
+        </button>
+        <button
+          className={`pp-memory-btn ${memoryPaused ? "pp-memory-paused" : ""}`}
+          onClick={handleToggleMemory}
+        >
+          {memoryPaused ? "▶ 恢复记忆" : "⏸ 暂停记忆"}
         </button>
       </section>
 
@@ -188,6 +262,7 @@ function ProfilePage() {
               <option value="confirmed">已授权</option>
               <option value="session_only">仅本轮</option>
               <option value="denied">已拒绝</option>
+              <option value="revoked">已撤回</option>
             </select>
           </div>
           <div className="pp-form-actions">
@@ -203,6 +278,15 @@ function ProfilePage() {
             <h3 className="pp-cat-title">
               {group.label}
               <span className="pp-cat-count">{group.items.length}</span>
+              {group.items.length > 0 && (
+                <button
+                  className="pp-btn-revoke-cat"
+                  onClick={() => handleRevokeCategory(group.key)}
+                  title={`撤回「${group.label}」全部授权`}
+                >
+                  撤回全部
+                </button>
+              )}
             </h3>
             {group.items.length === 0 ? (
               <p className="pp-empty-cat">暂无此类别画像</p>
@@ -248,6 +332,7 @@ function ProfilePage() {
                             <option value="confirmed">已授权</option>
                             <option value="session_only">仅本轮</option>
                             <option value="denied">已拒绝</option>
+                            <option value="revoked">已撤回</option>
                           </select>
                         </div>
                         <div className="pp-ef-actions">
@@ -278,6 +363,9 @@ function ProfilePage() {
                         </div>
                       </div>
                       <div className="pp-item-actions">
+                        {p.authorization_status !== "revoked" && (
+                          <button className="pp-btn-revoke" onClick={() => handleRevoke(p.id)}>撤回</button>
+                        )}
                         <button className="pp-btn-edit" onClick={() => startEdit(p)}>修改</button>
                         <button className="pp-btn-delete" onClick={() => handleDelete(p.id)}>删除</button>
                       </div>
@@ -288,6 +376,41 @@ function ProfilePage() {
             )}
           </div>
         ))}
+      </section>
+
+      <section className="pp-audit-section">
+        <button
+          className="pp-audit-toggle"
+          onClick={() => setShowAuditLog(!showAuditLog)}
+        >
+          授权变更记录
+          <span className="pp-audit-count">{auditLog.length}</span>
+          <span className="pp-audit-arrow">{showAuditLog ? "▲" : "▼"}</span>
+        </button>
+        {showAuditLog && (
+          auditLog.length === 0 ? (
+            <p className="pp-audit-empty">暂无操作记录</p>
+          ) : (
+            <ul className="pp-audit-list">
+              {auditLog.map((entry) => (
+                <li key={entry.id} className="pp-audit-item">
+                  <span className={`pp-audit-badge pp-audit-${entry.action}`}>
+                    {ACTION_LABELS[entry.action] || entry.action}
+                  </span>
+                  <span className="pp-audit-target">
+                    {(ACTION_TARGET[entry.action] || (() => entry.target))(entry.target)}
+                  </span>
+                  <span className="pp-audit-state">
+                    {entry.previous_state} → {entry.new_state}
+                  </span>
+                  <span className="pp-audit-time">
+                    {new Date(entry.timestamp).toLocaleString("zh-CN")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )
+        )}
       </section>
     </div>
   );

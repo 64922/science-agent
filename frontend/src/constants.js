@@ -15,6 +15,7 @@ export const AUTH_LABELS = {
   confirmed: "已授权",
   session_only: "仅本轮",
   denied: "已拒绝",
+  revoked: "已撤回",
 };
 
 export const DEMO_USERS = [
