@@ -21,6 +21,7 @@ from risk_detector import RiskDetector  # noqa: E402
 from profile_store import ProfileStore  # noqa: E402
 from profile_extractor import ProfileExtractor  # noqa: E402
 from profile_retriever import ProfileRetriever  # noqa: E402
+from humanization_pipeline import HumanizationPipeline  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -101,6 +102,12 @@ if llm_client is not None:
 # 初始化 RiskDetector（纯规则引擎，不依赖 LLMClient）
 risk_detector = RiskDetector()
 logger.info("RiskDetector 初始化成功")
+
+# 初始化 HumanizationPipeline（检测部分规则引擎，改写依赖 LLMClient）
+humanization_pipeline = None
+if llm_client is not None:
+    humanization_pipeline = HumanizationPipeline(llm_client)
+    logger.info("HumanizationPipeline 初始化成功")
 
 # 初始化 ProfileStore
 profile_store = ProfileStore()
@@ -430,6 +437,13 @@ async def chat(req: ChatRequest):
                 system_prompt = fact_lock_builder.inject_constraint(system_prompt, fact_lock)
         reply = llm_client.chat(system_prompt, req.message)
         risk_report = risk_detector.analyze(reply)
+        humanization_report = None
+        scenario_name = scenario["name"]
+        if humanization_pipeline is not None:
+            humanization_report = humanization_pipeline.rewrite(
+                reply, req.scenario_id, scenario_name, fact_lock
+            )
+            reply = humanization_report["rewritten_text"]
         profile_candidates = []
         if profile_extractor is not None:
             profile_candidates = profile_extractor.extract(req.message)
@@ -460,10 +474,11 @@ async def chat(req: ChatRequest):
         "reply": reply,
         "user_id": req.user_id,
         "scenario_id": req.scenario_id,
-        "scenario_name": scenario["name"],
+        "scenario_name": scenario_name,
         "sources": sources,
         "fact_lock": fact_lock,
         "risk_report": risk_report,
+        "humanization_report": humanization_report,
         "profile_candidates": profile_candidates,
         "profile_skip_log": profile_skip_log,
         "selected_profiles": selected_profiles,

@@ -211,6 +211,97 @@ function ProfileCandidateCard({ candidates: initialCandidates, onConfirm, onDism
   );
 }
 
+function HumanizationPanel({ report }) {
+  if (!report) {
+    return (
+      <>
+        <h3>人味化改写报告</h3>
+        <p className="citation-empty">暂无改写数据</p>
+      </>
+    );
+  }
+
+  const patterns = report.detected_patterns || [];
+  const changes = report.changes || [];
+  const terms = report.preserved_terms || [];
+
+  return (
+    <>
+      <h3>人味化改写报告</h3>
+      <div className="hz-summary">
+        <span className="hz-badge hz-badge-style">
+          {report.style_applied || "—"}
+        </span>
+        {report.fact_changed ? (
+          <span className="hz-badge hz-badge-warn">事实有变更</span>
+        ) : (
+          <span className="hz-badge hz-badge-ok">事实一致</span>
+        )}
+      </div>
+
+      {patterns.length > 0 && (
+        <div className="hz-section">
+          <div className="hz-section-title">
+            检测到 {report.ai_trace_count} 处AI痕迹
+          </div>
+          <div className="hz-pattern-tags">
+            {patterns.map((p, i) => (
+              <span key={i} className="hz-pattern-tag">{p}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {patterns.length === 0 && (
+        <div className="hz-section">
+          <p className="citation-empty">未检测到明显AI痕迹</p>
+        </div>
+      )}
+
+      {changes.length > 0 && (
+        <div className="hz-section">
+          <div className="hz-section-title">修改详情</div>
+          <ul className="hz-change-list">
+            {changes.slice(0, 5).map((c, i) => (
+              <li key={i} className="hz-change-item">
+                <span className="hz-change-type">{c.type}</span>
+                <div className="hz-change-before">"{c.before}"</div>
+                <div className="hz-change-arrow">→</div>
+                <div className="hz-change-after">"{c.after}"</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {terms.length > 0 && (
+        <div className="hz-section">
+          <div className="hz-section-title">受保护内容已保留</div>
+          <div className="hz-term-tags">
+            {terms.map((t, i) => (
+              <span key={i} className="hz-term-tag">{t}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="hz-section">
+        <div className="hz-section-title">改写前后对比</div>
+        <div className="hz-compare">
+          <div className="hz-compare-block hz-compare-original">
+            <div className="hz-compare-label">改写前（节选）</div>
+            <p className="hz-compare-text">{report.original_preview}</p>
+          </div>
+          <div className="hz-compare-block hz-compare-rewritten">
+            <div className="hz-compare-label">改写后（节选）</div>
+            <p className="hz-compare-text">{report.rewritten_preview}</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState("chat");
   const [userId, setUserId] = useState("demo_user_a");
@@ -227,6 +318,7 @@ function App() {
   const [profileCandidates, setProfileCandidates] = useState(null);
   const [profileSkipLog, setProfileSkipLog] = useState([]);
   const [selectedProfiles, setSelectedProfiles] = useState([]);
+  const [humanizationReport, setHumanizationReport] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -293,6 +385,7 @@ function App() {
       );
       setProfileSkipLog(data.profile_skip_log || []);
       setSelectedProfiles(data.selected_profiles || []);
+      setHumanizationReport(data.humanization_report || null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -506,6 +599,10 @@ function App() {
 
               {messages.length > 0 && (
                 <RiskPanel riskReport={riskReport} />
+              )}
+
+              {messages.length > 0 && (
+                <HumanizationPanel report={humanizationReport} />
               )}
             </aside>
           </div>

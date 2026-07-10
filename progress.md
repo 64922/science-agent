@@ -125,11 +125,11 @@
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 3 全部完成，准备 Phase 4（人味化与反馈闭环，Issues 14-16） |
-| Where am I going? | Phase 4: 人味化→反馈按钮→迭代日志 |
+| Where am I? | Phase 4 进行中，Issue 14 完成，Issues 15-16 待做 |
+| Where am I going? | Issue 15: 反馈按钮→Issue 16: 迭代日志 |
 | What's the goal? | 构建知己科教 Agent MVP，完整跑通画像-事实-人味化-多模态-评估闭环 |
-| What have I learned? | 画像闭环（Issues 10-13）完整跑通：Schema→提取→确认→授权→召回→注入，ProfileRetriever 5 因素评分公式有效区分不同用户/场景的画像排序 |
-| What have I done? | Phase 1-3 全部完成（Issues 01-13）：骨架→LLM→对话→场景→知识库→事实校验→画像系统 |
+| What have I learned? | HumanizationPipeline 检测部分纯规则引擎（0 额外 LLM 调用），改写部分通过 chat_structured 锁定保护内容后调用 LLM，回归校验确保事实一致性 |
+| What have I done? | Issue 14 完成：4 类 AI 痕迹检测 × 3 种风格改写 × 保护内容锁定+校验 × 前端 HumanizationPanel |
 
 ### Issue 05: 知识资料上传与文本切分
 - **Status:** complete
@@ -413,3 +413,31 @@
   - Smoke test: 偏好权重调整生效（-0.3 → score 从 0.89 降至 0.86）
   - 5/5 Acceptance Criteria met
   - **Phase 3 全部完成（Issues 10-13）**
+
+### Issue 14: 人味化表达检测与改写
+- **Status:** complete
+- **Started:** 2026-07-10
+- Actions taken:
+  - 创建 `backend/humanization_pipeline.py`：HumanizationPipeline 类，检测部分纯规则引擎，改写部分 LLM chat_structured
+  - 4 类 AI 痕迹检测：模板化开头/总结（7 模式）、过度排比/连接词堆叠（3 模式）、空泛总结（5 模式）、机翻感（3 模式）
+  - 保护内容锁定：数字/百分比（含单位）、科学术语（T细胞/B细胞/抗体等）、事实结论（from fact_lock）
+  - 3 种风格提示词：课堂老师（分步+引导问题）、科普作者（生动+类比）、科研汇报（克制+证据边界）
+  - 场景→风格映射：popular_science→科普作者、classroom_teaching→课堂老师、research_presentation→科研汇报、long_term_companion→课堂老师
+  - `_verify_protected()` 回归校验：改写后检查 3 字以上受保护术语是否仍存在
+  - LLM 调用失败时降级使用原文，不阻塞对话
+  - main.py: HumanizationPipeline 初始化 + `/api/chat` 调用（风险检测后，改写结果覆盖 reply）
+  - 响应新增 `humanization_report` 字段
+  - App.jsx: HumanizationPanel 组件——场景风格标签/事实一致性/检测到的AI痕迹标签/修改详情列表/受保护内容标签/改写前后对比
+  - App.css: 人味化面板完整样式（~200 lines），包含 hz-summary/badge/section/pattern-tags/term-tags/change-list/compare 子组件
+- Files created/modified:
+  - backend/humanization_pipeline.py (created — 297 lines)
+  - backend/main.py (updated — import + init + /api/chat flow + response)
+  - frontend/src/App.jsx (updated — HumanizationPanel component + humanizationReport state)
+  - frontend/src/App.css (updated — humanization panel styles, ~200 lines)
+- Verification:
+  - HumanizationPipeline import OK
+  - main.py import OK（所有 11 个模块初始化正常）
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（32 modules, 422ms）
+  - 规则检测冒烟测试：模板腔 4/4、连接词堆叠 1/1、干净文本 0/0、数字+术语锁定正确
+  - 5/5 Acceptance Criteria met

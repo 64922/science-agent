@@ -71,7 +71,7 @@ Phase 4
 - **Status:** complete
 
 ### Phase 4: 人味化与反馈闭环 (Issues 14-16)
-- [ ] **Issue 14**: 人味化表达检测与改写
+- [x] **Issue 14**: 人味化表达检测与改写
   - HumanizationPipeline：检测模板腔、过度排比、空泛总结、机翻感长句
   - 支持课堂老师、科普作者、科研汇报三种风格
   - 数字、术语、引用、事实结论锁定不可改
@@ -82,7 +82,7 @@ Phase 4
 - [ ] **Issue 16**: 迭代日志与版本对比展示
   - 回答版本历史 iteration_number
   - 前端对比第一版和最终版
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 5: 长期学习与多模态 (Issues 17-19)
 - [ ] **Issue 17**: 长期学习记录与下一课建议
