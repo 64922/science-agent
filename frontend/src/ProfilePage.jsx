@@ -1,30 +1,6 @@
 import { useState, useEffect } from "react";
 import "./ProfilePage.css";
-
-const CATEGORY_LABELS = {
-  basic_info: "基本情况",
-  stage_goal: "阶段目标",
-  knowledge_level: "知识储备水平",
-  interest_preference: "兴趣偏好",
-  expression_habit: "表达习惯",
-  emotion_trait: "情绪变化特征",
-  core_problem: "核心待解决问题",
-  authorization_boundary: "信息授权边界",
-};
-
-const CATEGORY_ORDER = Object.keys(CATEGORY_LABELS);
-
-const AUTH_LABELS = {
-  confirmed: "已授权",
-  session_only: "仅本轮",
-  denied: "已拒绝",
-};
-
-const DEMO_USERS = [
-  { id: "demo_user_a", name: "用户 A：高一学生" },
-  { id: "demo_user_b", name: "用户 B：大学低年级学生" },
-  { id: "demo_user_c", name: "用户 C：科研新手" },
-];
+import { CATEGORY_LABELS, CATEGORY_ORDER, AUTH_LABELS, DEMO_USERS } from "./constants";
 
 function ProfilePage() {
   const [userId, setUserId] = useState("demo_user_a");

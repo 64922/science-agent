@@ -19,6 +19,7 @@ from knowledge_retriever import KnowledgeRetriever  # noqa: E402
 from fact_lock import FactLockBuilder  # noqa: E402
 from risk_detector import RiskDetector  # noqa: E402
 from profile_store import ProfileStore  # noqa: E402
+from profile_extractor import ProfileExtractor  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -103,6 +104,12 @@ logger.info("RiskDetector 初始化成功")
 # 初始化 ProfileStore
 profile_store = ProfileStore()
 logger.info("ProfileStore 初始化成功，存储目录: %s", profile_store.storage_dir)
+
+# 初始化 ProfileExtractor（依赖 LLMClient）
+profile_extractor = None
+if llm_client is not None:
+    profile_extractor = ProfileExtractor(llm_client)
+    logger.info("ProfileExtractor 初始化成功")
 
 # 种子演示画像（从 demo-data.json 写入，仅在文件不存在时首次写入）
 from pathlib import Path as _Path  # noqa: E402
@@ -273,6 +280,53 @@ async def delete_profile(user_id: str, profile_id: str):
     return {"status": "ok"}
 
 
+class ConfirmRequest(BaseModel):
+    candidates: list[dict]
+    action: str  # "remember" | "session_only" | "deny"
+
+
+@app.post("/api/profile/{user_id}/confirm")
+async def confirm_profile_candidates(user_id: str, req: ConfirmRequest):
+    """确认画像候选：记住 / 仅本轮 / 拒绝。"""
+    if req.action not in ("remember", "session_only", "deny"):
+        raise HTTPException(status_code=400, detail=f"无效操作「{req.action}」，仅支持 remember/session_only/deny")
+
+    existing = profile_store.get_profiles(user_id)
+
+    results = []
+    for candidate in req.candidates:
+        if req.action == "deny":
+            results.append({"candidate": candidate, "status": "denied"})
+            continue
+
+        # 去重：相同 key+value 已存在则跳过
+        dupe = any(
+            p["profile_key"] == candidate["profile_key"]
+            and p["profile_value"] == candidate["profile_value"]
+            for p in existing
+        )
+        if dupe:
+            results.append({"candidate": candidate, "status": "skipped", "detail": "已存在相同画像"})
+            continue
+
+        try:
+            entry = {
+                "profile_key": candidate["profile_key"],
+                "profile_value": candidate["profile_value"],
+                "evidence": candidate.get("evidence", ""),
+                "confidence": 1.0 if req.action == "remember" else candidate.get("confidence", 0.5),
+                "authorization_status": "session_only" if req.action == "session_only" else "confirmed",
+            }
+            profile = profile_store.create_profile(user_id, entry)
+            existing.append(profile)
+            results.append({"candidate": candidate, "status": "written", "profile": profile})
+        except ValueError as exc:
+            results.append({"candidate": candidate, "status": "error", "detail": str(exc)})
+
+    logger.info("画像确认: user=%s action=%s count=%d", user_id, req.action, len(req.candidates))
+    return {"status": "ok", "results": results}
+
+
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     """接收用户消息，调用 LLM 返回科学讲解。"""
@@ -299,13 +353,17 @@ async def chat(req: ChatRequest):
                 system_prompt = fact_lock_builder.inject_constraint(system_prompt, fact_lock)
         reply = llm_client.chat(system_prompt, req.message)
         risk_report = risk_detector.analyze(reply)
+        profile_candidates = []
+        if profile_extractor is not None:
+            profile_candidates = profile_extractor.extract(req.message)
         logger.info(
-            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d risks=%d reply_len=%d",
+            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d risks=%d candidates=%d reply_len=%d",
             req.user_id, req.scenario_id, len(sources),
             len(fact_lock.get("facts", {}).get("confirmed", [])),
             len(fact_lock.get("facts", {}).get("uncertain", [])),
             len(fact_lock.get("facts", {}).get("forbidden", [])),
             risk_report["risk_count"],
+            len(profile_candidates),
             len(reply),
         )
     except APIError as exc:
@@ -319,4 +377,5 @@ async def chat(req: ChatRequest):
         "sources": sources,
         "fact_lock": fact_lock,
         "risk_report": risk_report,
+        "profile_candidates": profile_candidates,
     }

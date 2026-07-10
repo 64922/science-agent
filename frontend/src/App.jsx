@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import KnowledgePage from "./KnowledgePage";
 import ProfilePage from "./ProfilePage";
+import { CATEGORY_LABELS, DEMO_USERS } from "./constants";
 
 function getRiskShortLabel(signal) {
   if (signal.startsWith("绝对化")) return "绝对化";
@@ -127,8 +128,92 @@ function FactLockPanel({ factLock }) {
   );
 }
 
+function ProfileCandidateCard({ candidates: initialCandidates, onConfirm, onDismiss }) {
+  const [candidates, setCandidates] = useState(initialCandidates);
+  const [editingIdx, setEditingIdx] = useState(-1);
+  const [editValue, setEditValue] = useState("");
+
+  const startEdit = (idx) => {
+    setEditingIdx(idx);
+    setEditValue(candidates[idx].profile_value);
+  };
+
+  const confirmEdit = () => {
+    if (!editValue.trim()) return;
+    const updated = [...candidates];
+    updated[editingIdx] = { ...updated[editingIdx], profile_value: editValue.trim() };
+    setCandidates(updated);
+    setEditingIdx(-1);
+    setEditValue("");
+    onConfirm(updated, "remember");
+  };
+
+  const handleAction = (action) => {
+    onConfirm(candidates, action);
+  };
+
+  if (candidates.length === 0) return null;
+
+  return (
+    <div className="profile-candidate-card">
+      <div className="pcc-header">
+        <span className="pcc-icon">📋</span>
+        系统识别到以下画像候选，是否记住？
+      </div>
+      <ul className="pcc-list">
+        {candidates.map((c, i) => (
+          <li key={i} className="pcc-item">
+            <div className="pcc-category">{CATEGORY_LABELS[c.profile_key] || c.profile_key}</div>
+            {editingIdx === i ? (
+              <div className="pcc-edit-row">
+                <input
+                  type="text"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") confirmEdit(); }}
+                  autoFocus
+                />
+                <button className="pcc-btn-confirm-edit" onClick={confirmEdit}>确认修改</button>
+                <button className="pcc-btn-cancel-edit" onClick={() => setEditingIdx(-1)}>取消</button>
+              </div>
+            ) : (
+              <div className="pcc-value-row">
+                <div className="pcc-value">{c.profile_value}</div>
+                <button className="pcc-btn-edit-inline" onClick={() => startEdit(i)} title="修改后记住">
+                  ✎
+                </button>
+              </div>
+            )}
+            {c.evidence && (
+              <div className="pcc-evidence">证据：{c.evidence}</div>
+            )}
+            <div className="pcc-confidence">
+              置信度 {Math.round((c.confidence || 0) * 100)}%
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="pcc-actions">
+        <button className="pcc-btn-remember" onClick={() => handleAction("remember")}>
+          记住
+        </button>
+        <button className="pcc-btn-session" onClick={() => handleAction("session_only")}>
+          仅本次
+        </button>
+        <button className="pcc-btn-deny" onClick={() => handleAction("deny")}>
+          不要记
+        </button>
+        <button className="pcc-btn-dismiss" onClick={onDismiss}>
+          忽略
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState("chat");
+  const [userId, setUserId] = useState("demo_user_a");
   const [backendStatus, setBackendStatus] = useState(null);
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState("popular_science");
@@ -139,6 +224,7 @@ function App() {
   const [sources, setSources] = useState([]);
   const [factLock, setFactLock] = useState(null);
   const [riskReport, setRiskReport] = useState(null);
+  const [profileCandidates, setProfileCandidates] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -174,7 +260,7 @@ function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: "demo_user_a",
+          user_id: userId,
           message: text,
           scenario_id: selectedScenario,
         }),
@@ -198,6 +284,11 @@ function App() {
       setSources(data.sources || []);
       setFactLock(data.fact_lock || null);
       setRiskReport(data.risk_report || null);
+      setProfileCandidates(
+        data.profile_candidates && data.profile_candidates.length > 0
+          ? data.profile_candidates
+          : null
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -210,6 +301,24 @@ function App() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleConfirmCandidates = async (candidates, action) => {
+    try {
+      const res = await fetch(`/api/profile/${userId}/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidates, action }),
+      });
+      if (!res.ok) throw new Error("确认失败");
+      setProfileCandidates(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDismissCandidates = () => {
+    setProfileCandidates(null);
   };
 
   const currentLabel = useMemo(
@@ -267,6 +376,14 @@ function App() {
                 {s.name}
               </button>
             ))}
+            <div className="user-select-inline">
+              <label>用户：</label>
+              <select value={userId} onChange={(e) => setUserId(e.target.value)}>
+                {DEMO_USERS.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
           </nav>
 
           <div className="chat-container">
@@ -284,6 +401,14 @@ function App() {
                     <div className="message-content">{msg.content}</div>
                   </div>
                 ))}
+
+                {profileCandidates && (
+                  <ProfileCandidateCard
+                    candidates={profileCandidates}
+                    onConfirm={handleConfirmCandidates}
+                    onDismiss={handleDismissCandidates}
+                  />
+                )}
 
                 {loading && (
                   <div className="message assistant">
