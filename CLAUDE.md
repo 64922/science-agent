@@ -34,7 +34,7 @@ screenshots/       # 百炼控制台截图
 ## 开发流程
 
 - 使用 planning-with-files 管理任务：`task_plan.md`（路线图）、`findings.md`（发现）、`progress.md`（日志）
-- 24 个 Issue 分 7 批顺序执行，当前 Phase 4（Issues 14-16）
+- 24 个 Issue 分 7 批顺序执行，当前 Phase 5（Issues 17-19）
 - 每个 Issue 完成后必须同步更新规划文件，按以下顺序执行：
   1. `task_plan.md`：勾选 Issue 复选框，Phase 完成时更新 `Current Phase` 和 `Status`
   2. `progress.md`：添加独立的 Issue 条目（Status / Actions / Files / Verification / Commit）

@@ -105,6 +105,9 @@ npm run dev
 | POST | `/api/profile/{user_id}/memory-resume` | 恢复全部记忆 |
 | GET | `/api/profile/{user_id}/memory-status` | 记忆暂停状态 |
 | GET | `/api/profile/{user_id}/audit-log` | 授权变更审计日志 |
+| POST | `/api/feedback` | 用户反馈与回答迭代 |
+| GET | `/api/iterations/{turn_key}` | 获取迭代日志 |
+| GET | `/api/iterations/demo/{demo_id}` | 获取演示迭代案例 |
 
 ## 演示数据
 

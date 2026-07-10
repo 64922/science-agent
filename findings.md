@@ -8,7 +8,7 @@
 - 4 个标准场景：科普传播、课堂教学、科研展示、长期学习陪伴
 
 ## Research Findings
-- 项目于 2026-07-08 从空仓库初始化，当前 Phase 4（Issues 14-16）
+- 项目于 2026-07-08 从空仓库初始化，当前 Phase 5（Issues 17-19）
 - Issue 01 完成：项目骨架、FastAPI + React、演示数据就绪
 - Issue 02 完成：LLMClient 统一封装，通过 OpenAI SDK 调用百炼 Qwen
 - Issue 03 完成：基础对话工作台（/api/chat + 前端聊天界面），系统提示词不含画像注入，画像和场景选择器归后续 Issue
@@ -23,6 +23,10 @@
 - Issue 11 完成：ProfileExtractor 调用 Qwen chat_structured 从用户消息中提取画像候选，前端弹出确认卡片（记住/仅本次/不要记/修改后记住）。`/api/profile/{user_id}/confirm` 批量处理确认操作。
 - Issue 12 完成：ProfileStore 授权管理层（revoke_profile / revoke_category / set_memory_pause / get_authorized_profiles），6 个新 API 端点，JSONL 审计日志，前端撤回按钮 + 暂停记忆 + 授权变更记录面板。`get_authorized_profiles()` 返回 (authorized, skipped) 双列表供 Issue 13 使用。
 - Issue 13 完成：ProfileRetriever 按场景-类别相关性映射 + 5 因素评分公式召回 Top 5 已授权画像，注入系统提示词影响回答。新增 `preference_weight` 字段和 `adjust_preference_weight()` 方法支持反馈闭环（AC5）。前端"本轮调用画像"面板展示召回画像和调用理由。
+- Issue 14 完成：HumanizationPipeline 纯规则引擎检测 4 类 AI 痕迹（模板腔/排比/空泛总结/机翻感），LLM chat_structured 改写（3 种风格），保护内容锁定（数字/术语/事实结论）+ `_verify_protected()` 回归校验。场景→风格映射：popular_science→科普作者、classroom_teaching→课堂老师、research_presentation→科研汇报、long_term_companion→课堂老师。
+- Issue 15 完成：FeedbackRouter 8 种反馈类型 → 4 条处理路径（rewrite/rehumanize/fact_recheck/profile_correction），每条反馈有专用中文指令注入系统提示词。`/api/feedback` 端点在事实复查路径重新调用 fact_lock_builder，在画像修正路径调用 profile_extractor。
+- Issue 16 完成：IterationStore JSON 文件持久化（`data/iterations/{turn_key}.json`），turn_key 由 MD5(message+scenario_id) 生成。前端 IterationHistoryPanel 可折叠面板：版本列表 + 首版/终版并排对比。演示模式 `?demoIteration=immune_basic` 加载预设案例（2 次迭代：too_hard→too_ai）。`profile_updated` 判定下沉至 main.py（由 `profile_correction is not None` 决定）。
+- Phase 4（Issues 14-16）全部完成，项目进入 Phase 5（Issues 17-19）：长期学习记录、小测题、多模态内容生成。
 - docs/product-plan.md 已包含完整的 14 模块产品设计和 24 个 Issue 定义
 - 开发分 7 批顺序推进：基础骨架 → 知识库 → 画像 → 人味化 → 学习/多模态 → 评估 → 交付
 
