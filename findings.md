@@ -18,7 +18,11 @@
 - Issue 06 完成：SkillGenerator 调用 Qwen chat_structured 从切片中抽取核心概念/定义/误解/受众，每条知识点带 source_chunks 回溯，结果持久化为 `{doc_id}_skill.json`，前端 Skill 详情面板支持查看和重新生成
 - Issue 07 完成：KnowledgeRetriever 基于 ChromaDB 实现向量检索 + 关键词回退（bigram 分词 + 完整查询命中加权），上传文档自动索引，/api/chat 注入检索证据到系统提示词（MAX_EVIDENCE_CHARS=3000 / MAX_CHUNK_CHARS=800 预算控制），前端右侧新增"本轮引用证据"面板。ChromaDB 默认 all-MiniLM-L6-v2 嵌入模型对中文内容距离偏大，采用 EVIDENCE_CUTOFF=1.85 阈值判断无证据。ChunkDict / SourceDict TypedDict 消除 Primitive Obsession。code review 4 项全部修复：魔术数字命名化、关键词回退、TypedDict、token 预算
 - Issue 08 完成：FactLockBuilder 调用 Qwen chat_structured 从知识库资料中提取结构化事实清单（confirmed / uncertain / forbidden 三类），约束注入系统提示词确保最终回答不超出锁定边界。每次 /api/chat 先锁事实再生成回答，增加一次额外 LLM 调用。前端侧栏"事实锁定结果"以颜色标签区分三类事实。
-- Issue 10 完成：ProfileStore 实现 8 类画像字段（基本情况、阶段目标、知识水平、兴趣偏好、表达习惯、情绪特征、核心问题、授权边界）的完整 CRUD，JSON 文件按用户 ID 分文件存储于 `data/profiles/`。启动时自动从 demo-data.json 为 3 个演示用户各写入 5 条种子画像（basic_info / knowledge_level / interest_preference / expression_habit / stage_goal）。前端"我的画像"页支持用户切换、按类别分组查看、添加/修改/删除操作，置信度用滑块调节、授权状态三选一（已授权/仅本轮/已拒绝）。API 端点：GET 列表、POST 新增、PUT 更新、DELETE 删除、GET 类别定义。，无需额外 LLM 调用。覆盖 5 类风险：绝对化表达（所有/一定/完全/必然/毫无疑问等 11 模式）、具体数字/百分比、医学建议、实验安全、因果外推。检测到高风险句后通过 DOWNGRADE_MAP 自动降级（如"所有"→"大多数"、"一定"→"很可能"）。前端侧栏"风险检测结果"以颜色标签区分风险类型，并展示建议修改文本。Phase 2 全部完成。
+- Issue 09 完成：RiskDetector 纯规则引擎，无需额外 LLM 调用。覆盖 5 类风险：绝对化表达（11 个正则模式）、具体数字/百分比、医学建议、实验安全、因果外推。检测到高风险句后通过 DOWNGRADE_MAP 自动降级。前端侧栏"风险检测结果"以颜色标签区分风险类型，并展示建议修改文本。Phase 2 全部完成。
+- Issue 10 完成：ProfileStore 实现 8 类画像字段的完整 CRUD，JSON 文件按用户 ID 分文件存储。启动时自动从 demo-data.json 为 3 个演示用户各写入 5 条种子画像。前端"我的画像"页支持用户切换、按类别分组查看、添加/修改/删除操作。
+- Issue 11 完成：ProfileExtractor 调用 Qwen chat_structured 从用户消息中提取画像候选，前端弹出确认卡片（记住/仅本次/不要记/修改后记住）。`/api/profile/{user_id}/confirm` 批量处理确认操作。
+- Issue 12 完成：ProfileStore 授权管理层（revoke_profile / revoke_category / set_memory_pause / get_authorized_profiles），6 个新 API 端点，JSONL 审计日志，前端撤回按钮 + 暂停记忆 + 授权变更记录面板。`get_authorized_profiles()` 返回 (authorized, skipped) 双列表供 Issue 13 使用。
+- Issue 13 完成：ProfileRetriever 按场景-类别相关性映射 + 5 因素评分公式召回 Top 5 已授权画像，注入系统提示词影响回答。新增 `preference_weight` 字段和 `adjust_preference_weight()` 方法支持反馈闭环（AC5）。前端"本轮调用画像"面板展示召回画像和调用理由。
 - docs/product-plan.md 已包含完整的 14 模块产品设计和 24 个 Issue 定义
 - 开发分 7 批顺序推进：基础骨架 → 知识库 → 画像 → 人味化 → 学习/多模态 → 评估 → 交付
 

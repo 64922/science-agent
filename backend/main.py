@@ -20,6 +20,7 @@ from fact_lock import FactLockBuilder  # noqa: E402
 from risk_detector import RiskDetector  # noqa: E402
 from profile_store import ProfileStore  # noqa: E402
 from profile_extractor import ProfileExtractor  # noqa: E402
+from profile_retriever import ProfileRetriever  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger("main")
@@ -110,6 +111,10 @@ profile_extractor = None
 if llm_client is not None:
     profile_extractor = ProfileExtractor(llm_client)
     logger.info("ProfileExtractor 初始化成功")
+
+# 初始化 ProfileRetriever（纯规则引擎，不依赖 LLMClient）
+profile_retriever = ProfileRetriever()
+logger.info("ProfileRetriever 初始化成功")
 
 # 种子演示画像（从 demo-data.json 写入，仅在文件不存在时首次写入）
 from pathlib import Path as _Path  # noqa: E402
@@ -325,6 +330,10 @@ async def audit_log(user_id: str):
     return {"status": "ok", "entries": profile_store.get_audit_log(user_id)}
 
 
+class PreferenceFeedback(BaseModel):
+    delta: float  # 负值降低权重，正值提升，范围 [-1, 1]
+
+
 class ConfirmRequest(BaseModel):
     candidates: list[dict]
     action: str  # "remember" | "session_only" | "deny"
@@ -372,6 +381,15 @@ async def confirm_profile_candidates(user_id: str, req: ConfirmRequest):
     return {"status": "ok", "results": results}
 
 
+@app.post("/api/profile/{user_id}/preference/{profile_id}")
+async def adjust_preference(user_id: str, profile_id: str, req: PreferenceFeedback):
+    """调整画像偏好权重（用户反馈"不喜欢这类例子"时降低权重）。"""
+    profile = profile_store.adjust_preference_weight(user_id, profile_id, req.delta)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="画像条目不存在")
+    return {"status": "ok", "profile": profile}
+
+
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     """接收用户消息，调用 LLM 返回科学讲解。"""
@@ -389,6 +407,14 @@ async def chat(req: ChatRequest):
         system_prompt = scenario_router.build_system_prompt(
             req.scenario_id, req.user_id
         )
+        # 画像召回（Issue 13）
+        authorized_profiles, profile_skipped = profile_store.get_authorized_profiles(req.user_id)
+        profile_retrieval = profile_retriever.retrieve(
+            req.user_id, req.scenario_id, req.message, authorized_profiles,
+        )
+        selected_profiles = profile_retrieval.get("selected_profiles", [])
+        if selected_profiles:
+            system_prompt = profile_retriever.build_profile_context(selected_profiles) + "\n" + system_prompt
         sources = knowledge_retriever.retrieve(req.message, top_k=5)
         fact_lock = EMPTY_FACT_LOCK
         if sources:
@@ -401,7 +427,6 @@ async def chat(req: ChatRequest):
         profile_candidates = []
         if profile_extractor is not None:
             profile_candidates = profile_extractor.extract(req.message)
-        _, profile_skipped = profile_store.get_authorized_profiles(req.user_id)
         profile_skip_log = []
         for s in profile_skipped:
             p = s["profile"]
@@ -411,13 +436,14 @@ async def chat(req: ChatRequest):
                 "reason": f"该画像因未授权未调用（{s['reason']}）",
             })
         logger.info(
-            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d risks=%d candidates=%d skipped=%d reply_len=%d",
+            "对话完成 | user=%s scenario=%s sources=%d confirmed=%d uncertain=%d forbidden=%d risks=%d candidates=%d selected=%d skipped=%d reply_len=%d",
             req.user_id, req.scenario_id, len(sources),
             len(fact_lock.get("facts", {}).get("confirmed", [])),
             len(fact_lock.get("facts", {}).get("uncertain", [])),
             len(fact_lock.get("facts", {}).get("forbidden", [])),
             risk_report["risk_count"],
             len(profile_candidates),
+            len(selected_profiles),
             len(profile_skip_log),
             len(reply),
         )
@@ -434,4 +460,5 @@ async def chat(req: ChatRequest):
         "risk_report": risk_report,
         "profile_candidates": profile_candidates,
         "profile_skip_log": profile_skip_log,
+        "selected_profiles": selected_profiles,
     }

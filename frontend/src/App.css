@@ -433,6 +433,47 @@ body {
   margin-top: 2px;
 }
 
+/* Profile Recall Panel (Issue 13) */
+.profile-recall-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-recall-item {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.pr-category {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.pr-value {
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.pr-reason {
+  display: block;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+
 /* Profile Skip Log */
 .skip-log-list {
   list-style: none;

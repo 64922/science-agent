@@ -226,6 +226,7 @@ function App() {
   const [riskReport, setRiskReport] = useState(null);
   const [profileCandidates, setProfileCandidates] = useState(null);
   const [profileSkipLog, setProfileSkipLog] = useState([]);
+  const [selectedProfiles, setSelectedProfiles] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -291,6 +292,7 @@ function App() {
           : null
       );
       setProfileSkipLog(data.profile_skip_log || []);
+      setSelectedProfiles(data.selected_profiles || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -468,6 +470,23 @@ function App() {
 
               {messages.length > 0 && (
                 <FactLockPanel factLock={factLock} />
+              )}
+
+              {selectedProfiles.length > 0 && (
+                <>
+                  <h3>本轮调用画像</h3>
+                  <ul className="profile-recall-list">
+                    {selectedProfiles.map((p, i) => (
+                      <li key={i} className="profile-recall-item">
+                        <span className="pr-category">
+                          {CATEGORY_LABELS[p.profile_key] || p.profile_key}
+                        </span>
+                        <span className="pr-value">{p.profile_value}</span>
+                        <span className="pr-reason">{p.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
 
               {profileSkipLog.length > 0 && (

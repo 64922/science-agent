@@ -332,3 +332,34 @@
   - Profile CRUD 冒烟测试：增/查/改/删 全部通过
   - 3 个演示用户各 5 条种子画像正确写入
   - 5/5 Acceptance Criteria met
+
+### Issue 13: 画像场景化召回并影响回答
+- **Status:** complete
+- **Started:** 2026-07-10
+- Actions taken:
+  - 创建 `backend/profile_retriever.py`：ProfileRetriever 类，场景-类别相关性映射（4 场景 × 8 类别权重矩阵）
+  - 5 因素评分公式：场景相关性(0.35) + 置信度(0.25) + 确认权重(0.20) + 新鲜度(0.10) + 偏好权重(0.10)
+  - `build_profile_context()` 将召回画像转为可注入系统提示词的文本
+  - ProfileStore 新增 `preference_weight` 字段（默认 0.5）+ `adjust_preference_weight()` 方法
+  - `/api/chat` 改造：先召回画像 → 注入 system prompt → 生成回答 → 返回 selected_profiles
+  - 新增 `POST /api/profile/{user_id}/preference/{profile_id}` 端点（AC5 反馈权重调整）
+  - App.jsx: 新增 `selectedProfiles` 状态，"本轮调用画像"面板展示画像 + 调用理由
+  - App.css: `.profile-recall-list` / `.profile-recall-item` / `.pr-category` / `.pr-value` / `.pr-reason` 样式
+- Files created/modified:
+  - backend/profile_retriever.py (created — 140 lines)
+  - backend/profile_store.py (updated — preference_weight in create/seed/update + adjust_preference_weight)
+  - backend/main.py (updated — ProfileRetriever import/init/chat flow/response + PreferenceFeedback endpoint)
+  - frontend/src/App.jsx (updated — selectedProfiles state + capture + recall panel)
+  - frontend/src/App.css (updated — profile recall panel styles, ~35 lines)
+  - task_plan.md (updated — Issues 11/12/13 marked complete, Phase 3 status → complete)
+  - findings.md (updated — Issue 13 completion added, Issues 09-12 context restored)
+- Verification:
+  - ProfileRetriever import OK
+  - main.py import OK（所有 10 个模块初始化正常）
+  - `pytest test_scenario_router.py -v` → 10 passed（无回归）
+  - `vite build` → 构建成功（32 modules, 456ms）
+  - Smoke test: 同一问题不同用户 → 不同画像值召回（demo_user_a 兴趣=航天类比 vs demo_user_b 兴趣=机制图因果链）
+  - Smoke test: 不同场景 → 不同排序（popular_science: interest_preference 第一, classroom_teaching: knowledge_level 第一）
+  - Smoke test: 偏好权重调整生效（-0.3 → score 从 0.89 降至 0.86）
+  - 5/5 Acceptance Criteria met
+  - **Phase 3 全部完成（Issues 10-13）**

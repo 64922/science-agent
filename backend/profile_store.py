@@ -54,7 +54,7 @@ class ProfileStore:
         """新增一条画像条目。
 
         entry 需包含: profile_key, profile_value, evidence(可选), confidence(可选),
-                     authorization_status(可选), scope(可选)
+                     authorization_status(可选), scope(可选), preference_weight(可选)
         """
         if entry.get("profile_key") not in PROFILE_CATEGORIES:
             raise ValueError(f"无效的画像类别「{entry.get('profile_key')}」")
@@ -69,6 +69,7 @@ class ProfileStore:
             "confidence": entry.get("confidence", 0.5),
             "authorization_status": entry.get("authorization_status", "confirmed"),
             "scope": entry.get("scope", "learning_context"),
+            "preference_weight": entry.get("preference_weight", 0.5),
             "created_at": now,
             "updated_at": now,
         }
@@ -87,7 +88,7 @@ class ProfileStore:
                 # 只允许更新特定字段
                 allowed = {
                     "profile_value", "profile_key", "evidence", "confidence",
-                    "authorization_status", "scope",
+                    "authorization_status", "scope", "preference_weight",
                 }
                 for key in allowed:
                     if key in updates:
@@ -123,6 +124,7 @@ class ProfileStore:
                 "confidence": entry.get("confidence", 0.9),
                 "authorization_status": entry.get("authorization_status", "confirmed"),
                 "scope": entry.get("scope", "learning_context"),
+                "preference_weight": entry.get("preference_weight", 0.5),
                 "created_at": now,
                 "updated_at": now,
             }
@@ -243,6 +245,25 @@ class ProfileStore:
             else:
                 authorized.append(p)
         return authorized, skipped
+
+    def adjust_preference_weight(self, user_id: str, profile_id: str, delta: float) -> dict | None:
+        """调整画像的偏好权重（用于用户反馈"不喜欢这类例子"）。
+
+        delta 为负值时降低权重，为正值时提升。权重范围限定 [0, 1]。
+        """
+        profiles = self._read_user(user_id)
+        for p in profiles:
+            if p["id"] == profile_id:
+                current = p.get("preference_weight", 0.5)
+                p["preference_weight"] = max(0.0, min(1.0, current + delta))
+                p["updated_at"] = datetime.now(timezone.utc).isoformat()
+                self._write_user(user_id, profiles)
+                logger.info(
+                    "偏好权重已调整: user=%s profile=%s delta=%+.2f old=%.2f new=%.2f",
+                    user_id, profile_id, delta, current, p["preference_weight"],
+                )
+                return p
+        return None
 
     # ------------------------------------------------------------------
     # 文件读写
